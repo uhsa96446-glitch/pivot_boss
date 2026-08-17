@@ -1,0 +1,279 @@
+{
+  "symbol": "NSE_INDEX|Nifty 50",
+  "previous_session": {
+    "date": "2026-08-14T00:00:00+05:30",
+    "open": 24361.9,
+    "high": 24405.2,
+    "low": 24296.8,
+    "close": 24366.0,
+    "volume": 0,
+    "oi": 0
+  },
+  "pivots": {
+    "P": 24356.0,
+    "BC": 24351.0,
+    "TC": 24361.0,
+    "CPR_TOP": 24361.0,
+    "CPR_BOTTOM": 24351.0,
+    "CPR_WIDTH": 10.0,
+    "R1": 24415.2,
+    "R2": 24464.4,
+    "R3": 24523.6,
+    "S1": 24306.8,
+    "S2": 24247.6,
+    "S3": 24198.4,
+    "H1": 24375.94,
+    "H2": 24385.87,
+    "H3": 24395.81,
+    "H4": 24425.62,
+    "H5": 24474.71,
+    "L1": 24356.06,
+    "L2": 24346.13,
+    "L3": 24336.19,
+    "L4": 24306.38,
+    "L5": 24257.29,
+    "RANGE": 108.4,
+    "CAM_WIDTH": 59.62
+  },
+  "value_area": {
+    "VAH": 24402.0,
+    "POC": 24372.0,
+    "VAL": 24326.0,
+    "VALUE_WIDTH": 76.0,
+    "method": "futures_volume_profile"
+  },
+  "next_trading_day": "2026-08-18",
+  "opening_classification": "PENDING",
+  "two_day_relationship": "LOWER_VALUE",
+  "first_15m_candle": null,
+  "today_full": {},
+  "predictions": {
+    "day_type": {
+      "type": "RANGE",
+      "bias": "BEARISH",
+      "forecast": "RANGE",
+      "signals": [
+        "narrow_cpr",
+        "wide_va",
+        "wide_cam"
+      ],
+      "cpr_narrow": true,
+      "cpr_wide": false,
+      "va_narrow": false,
+      "va_wide": true,
+      "cam_narrow": false,
+      "cam_wide": true
+    },
+    "scenarios": {
+      "case_a_in_range_in_value": {
+        "condition": "PDL <= O <= PDH AND VAL <= O <= VAH",
+        "bias": "NEUTRAL",
+        "primary": "If price breaks VAH and accepts \u2192 LONG",
+        "primary_target": "VAH extension / R1",
+        "contingency": "If price breaks VAL and accepts \u2192 SHORT",
+        "contingency_target": "VAL extension / S1",
+        "no_trade": "Price remains inside value"
+      },
+      "case_b_in_range_above_value": {
+        "condition": "PDL <= O <= PDH AND O > VAH",
+        "bias": "BULLISH",
+        "primary": "If price accepts above VAH \u2192 LONG candidate",
+        "primary_target": "R1 / R2",
+        "contingency": "If price returns below VAH \u2192 CANCEL bullish thesis",
+        "contingency_target": "POC / CPR",
+        "failure": "VAH acts as resistance"
+      },
+      "case_c_in_range_below_value": {
+        "condition": "PDL <= O <= PDH AND O < VAL",
+        "bias": "BEARISH",
+        "primary": "If price accepts below VAL \u2192 SHORT candidate",
+        "primary_target": "S1 / S2",
+        "contingency": "If price reclaims VAL \u2192 CANCEL bearish thesis",
+        "contingency_target": "POC / CPR",
+        "failure": "VAL acts as support"
+      },
+      "case_d_out_above": {
+        "condition": "O > PDH",
+        "bias": "BULLISH",
+        "primary": "If first 15m closes above PDH \u2192 bullish confirmation, LONG",
+        "primary_target": "R2 / R3",
+        "contingency": "If first 15m closes below PDH \u2192 failed gap, watch PDH/VAH/POC",
+        "contingency_target": "Return to prior range/value",
+        "failure": "Gap fill back inside prior range"
+      },
+      "case_e_out_below": {
+        "condition": "O < PDL",
+        "bias": "MIXED",
+        "primary": "If first 15m closes below PDL \u2192 bearish confirmation, SHORT",
+        "primary_target": "S2 / S3",
+        "contingency": "If first 15m closes above PDL \u2192 failed gap, watch PDL/VAL/POC",
+        "contingency_target": "Return to prior range/value",
+        "failure": "Gap fill back inside prior range"
+      },
+      "trigger_levels": {
+        "reversal_longs": [
+          {
+            "level": 24372.0,
+            "desc": "POC rejection",
+            "target": 24395.81
+          },
+          {
+            "level": 24336.19,
+            "desc": "L3 reversal (bullish)",
+            "target": 24395.81
+          },
+          {
+            "level": 24326.0,
+            "desc": "VAL bounce",
+            "target": 24372.0
+          },
+          {
+            "level": 24356.0,
+            "desc": "CPR support in uptrend",
+            "target": 24395.81
+          }
+        ],
+        "reversal_shorts": [
+          {
+            "level": 24372.0,
+            "desc": "POC rejection",
+            "target": 24336.19
+          },
+          {
+            "level": 24395.81,
+            "desc": "H3 rejection (bearish)",
+            "target": 24336.19
+          },
+          {
+            "level": 24402.0,
+            "desc": "VAH rejection",
+            "target": 24372.0
+          },
+          {
+            "level": 24356.0,
+            "desc": "CPR resistance in downtrend",
+            "target": 24336.19
+          }
+        ],
+        "breakout_longs": [
+          {
+            "level": 24415.2,
+            "desc": "R1 break",
+            "target": 24464.4
+          },
+          {
+            "level": 24425.620000000003,
+            "desc": "H4 breakout",
+            "target": 24474.708735306707
+          },
+          {
+            "level": 24405.2,
+            "desc": "PDH break",
+            "target": 24464.4
+          },
+          {
+            "level": 24402.0,
+            "desc": "VAH break (accepted)",
+            "target": 24415.2
+          }
+        ],
+        "breakdown_shorts": [
+          {
+            "level": 24306.8,
+            "desc": "S1 break",
+            "target": 24247.6
+          },
+          {
+            "level": 24306.379999999997,
+            "desc": "L4 breakdown",
+            "target": 24257.291264693293
+          },
+          {
+            "level": 24296.8,
+            "desc": "PDL break",
+            "target": 24247.6
+          },
+          {
+            "level": 24326.0,
+            "desc": "VAL break (accepted)",
+            "target": 24306.8
+          }
+        ]
+      },
+      "primary_plan": {
+        "scenario": "Bearish structure (Lower Value / Narrow CPR)",
+        "entry": "Sell rallies into CPR/POC/VAH resistance",
+        "targets": [
+          24306.8,
+          24247.6,
+          24336.19
+        ],
+        "stop": "Above PDH / VAH / CPR_TOP",
+        "contingency": "If CPR breaks up or price closes above VAH \u2192 flip to LONG bias"
+      },
+      "hot_zones": [
+        {
+          "top": 24306.8,
+          "bottom": 24306.379999999997,
+          "width": 0.42,
+          "levels": [
+            24306.8,
+            24306.379999999997
+          ]
+        },
+        {
+          "top": 24336.19,
+          "bottom": 24326.0,
+          "width": 10.19,
+          "levels": [
+            24326.0,
+            24336.19
+          ]
+        },
+        {
+          "top": 24372.0,
+          "bottom": 24356.0,
+          "width": 16.0,
+          "levels": [
+            24356.0,
+            24372.0
+          ]
+        },
+        {
+          "top": 24402.0,
+          "bottom": 24395.81,
+          "width": 6.19,
+          "levels": [
+            24402.0,
+            24395.81
+          ]
+        },
+        {
+          "top": 24415.2,
+          "bottom": 24402.0,
+          "width": 13.2,
+          "levels": [
+            24402.0,
+            24415.2
+          ]
+        },
+        {
+          "top": 24425.620000000003,
+          "bottom": 24415.2,
+          "width": 10.42,
+          "levels": [
+            24415.2,
+            24425.620000000003
+          ]
+        }
+      ],
+      "no_trade_rules": [
+        "No trade if price in middle of value with no directional acceptance",
+        "No continuation trade if forecast=trend but no breakout occurs",
+        "No trade if forecast=range but price is in the middle",
+        "No continuation if breakout occurs but immediately fails",
+        "Wait if reversal level touched but no reversal confirmation"
+      ]
+    }
+  }
+}
