@@ -4,7 +4,8 @@ on:
   schedule:
     # Runs at 04:00 UTC = 9:30 AM IST (UTC+5:30)
     - cron: '0 4 * * 1-5'
-
+  workflow_dispatch:
+    
 jobs:
   live-market-update:
     runs-on: ubuntu-latest
