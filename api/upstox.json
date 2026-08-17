@@ -1,0 +1,11 @@
+{
+    "upstox": {
+        "api_key": "e08f8588-6f4d-486e-a2c3-4eb57a50fa7d",
+        "api_secret": "at2s0e0h7p",
+        "redirect_uri": "http://127.0.0.1:8080",
+        "mobile_number": "8620906459",
+        "pin": "990386",
+        "totp_secret": "QF5BDYOLOBT6MMF4J4TROGWZUF4L7ZKN",
+        "access_token": "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiIyOUFCSFUiLCJqdGkiOiI2YTgxZjM4YzBjMjFkNzdiYTc3MzcwODciLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6dHJ1ZSwiaWF0IjoxNzg2OTAxMzg4LCJpc3MiOiJ1ZGFwaS1nYXRld2F5LXNlcnZpY2UiLCJleHAiOjE3ODY5MTc2MDB9.mZa5RNAaeI5N1ig1sOxJztCleK-gU9i6HJQ6tQlBlLc"
+    }
+}
