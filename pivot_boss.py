@@ -1160,15 +1160,18 @@ def main():
     market_close = today.replace(hour=15, minute=30, second=0, microsecond=0)
     market_closed = is_trading_day and today >= market_close
 
-    # If today is a trading day and market has closed, synthesize today's bar
-    # from V3 intraday candles (the daily OHLC API won't include today).
-    if market_closed:
-        today_bar = fetch_today_daily_bar(client, symbol, today_str)
+    # Synthesize current session bar via V3 intraday when:
+    # 1. Today is a trading day and market has closed (post-close weekday)
+    # 2. Today is a non-trading day (weekend/holiday) — V2 daily excludes
+    #    the last trading day's current session
+    if market_closed or not is_today_trading_day:
+        target_fetch_str = today_str if is_trading_day else last_trade.strftime("%Y-%m-%d")
+        today_bar = fetch_today_daily_bar(client, symbol, target_fetch_str)
         if today_bar:
-            print(f"[INFO] Appending synthesized today's bar ({today_str}) via V3 intraday", file=sys.stderr)
+            print(f"[INFO] Appending synthesized bar ({target_fetch_str}) via V3 intraday", file=sys.stderr)
             daily = daily + [today_bar]
         else:
-            print(f"[WARN] Could not fetch today's data via V3 intraday; falling back to last_trade data", file=sys.stderr)
+            print(f"[WARN] Could not fetch V3 intraday; falling back to last_trade data", file=sys.stderr)
 
     prev_bar = daily[-1]       # most recent completed session
     prev_prev_bar = daily[-2]  # session before that — for two-day CPR
