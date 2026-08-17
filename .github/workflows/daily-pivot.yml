@@ -1,0 +1,41 @@
+name: Daily PivotBoss Update
+
+on:
+  schedule:
+    # Runs at 12:30 UTC = 6:00 PM IST (UTC+5:30)
+    - cron: '30 12 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  update-pivots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pyotp pandas websocket-client
+
+
+      - name: Run PivotBoss
+        env:
+          FORCE_REFRESH_NSE_HOLIDAYS: '0'
+        run: python pivot_boss.py --alias NIFTY 2>&1
+
+      - name: Commit and push NIFTY.json
+        run: |
+          git config --global user-name 'github-actions[bot]'
+          git config --global user-email 'github-actions[bot]@users.noreply.github.com'
+          if [ -n "$(git status --porcelain public/data/NIFTY.json)" ]; then
+            git add public/data/NIFTY.json
+            git commit -m "chore: auto-update NIFTY pivot data" || true
+            git push
+          else
+            echo "No changes to commit"
+          fi

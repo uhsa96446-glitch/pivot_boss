@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.git*
+!.github/
+
+# Data caches
+data/*.json
+!data/nse_holidays.json  # Keep committed holiday cache
+!data/instruments_NSE.json  # Keep committed master instruments
+
+# Logs
+*.log
+logs/
+tmp/
+
+# Credentials
+# api/upstox.json
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+api/upstox.json
+api/__pycache__/upstox_client.cpython-314.pyc
+api/upstox.json
