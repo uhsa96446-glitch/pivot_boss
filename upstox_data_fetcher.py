@@ -6,9 +6,8 @@ Single-file tool that fetches historical data from Upstox API and
 computes the next trading day with full scenario coverage.
 
 Usage:
-    1. Set env vars: UPSTOX_API_KEY, UPSTOX_ACCESS_TOKEN
-       OR pass them as CLI args: --api-key, --access-token
-    2. Run:  python upstox_data_fetcher.py --symbol NSE_EQ|NSE|NSE|NSE_NIFTY BANK_NIFTY --days 5
+    1. Configure credentials in api/upstox.json OR pass via CLI args (see --help)
+    2. Run:  python upstox_data_fetcher.py --alias NIFTY --days 5
     3. Output: prints JSON with all PivotBoss data for next trading day
 
 Data fetched per the PivotBoss playbook:
@@ -549,7 +548,7 @@ def _is_wide(width: float, range_val: float) -> bool:
     return width / range_val > 0.50  # ponytail: 50% threshold, tune per instrument
 
 
-def compute_day_type(piv: dict, va: dict, relationship: str, prev_bar: dict) -> dict:
+def compute_day_type(piv: dict, va: dict, relationship: str, prev_rng: float) -> dict:
     """
     Determine the expected day type per Playbook §§12-28.
 
@@ -559,7 +558,7 @@ def compute_day_type(piv: dict, va: dict, relationship: str, prev_bar: dict) -> 
         forecast: what pivot widths suggest
         actual_setup: combined assessment
     """
-    rng = piv["RANGE"]
+    rng = prev_rng
     cpr_width = piv["CPR_WIDTH"]
     va_width = va["VALUE_WIDTH"]
     cam_width = piv["CAM_WIDTH"]
@@ -635,7 +634,7 @@ def compute_day_type(piv: dict, va: dict, relationship: str, prev_bar: dict) -> 
     }
 
 
-def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info: dict, prev_prev_bar: dict) -> dict:
+def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info: dict, prev_prev_bar: dict, prev_rng: float) -> dict:
     """
     Generate all possible market scenarios per the PivotBoss playbook.
 
@@ -649,7 +648,7 @@ def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info
     pdh = prev_bar["high"]
     pdl = prev_bar["low"]
     pdc = prev_bar["close"]
-    rng = prev_bar["RANGE"] if "RANGE" in prev_bar else prev_bar["high"] - prev_bar["low"]
+    rng = prev_rng
     vah, poc, val = va["VAH"], va["POC"], va["VAL"]
     scenarios = {}
 
@@ -811,7 +810,8 @@ def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info
 def generate_all_scenarios(prev_bar: dict, pivots: dict, va: dict, day_type: dict) -> dict:
     """Wrapper to compute all scenario coverage."""
     prev_prev_bar = prev_bar  # will be overridden by caller if available
-    return compute_scenario_coverage(prev_bar, pivots, va, day_type, prev_prev_bar)
+    prev_rng = prev_bar["high"] - prev_bar["low"]
+    return compute_scenario_coverage(prev_bar, pivots, va, day_type, prev_prev_bar, prev_rng)
 
 
 def two_day_relationship(today_cpr: dict, prev_cpr: dict) -> str:
@@ -909,10 +909,9 @@ def build_scenario_report(
         first_15m = intraday[0] if intraday else None
 
     # ── Compute day type + scenario predictions (§§3, 8-27) ──
-    prev_bar["RANGE"] = prev_bar["high"] - prev_bar["low"]  # for hot zone calc
-    day_type = compute_day_type(piv, va, relationship, prev_bar)
-    prev_bar.pop("RANGE", None)  # clean up temporary field
-    scenarios = compute_scenario_coverage(prev_bar, piv, va, day_type, prev_prev_bar)
+    prev_rng = prev_bar["high"] - prev_bar["low"]  # for hot zone calc
+    day_type = compute_day_type(piv, va, relationship, prev_rng)
+    scenarios = compute_scenario_coverage(prev_bar, piv, va, day_type, prev_prev_bar, prev_rng)
 
     return {
         "symbol": symbol,
@@ -960,8 +959,8 @@ def main():
     parser = argparse.ArgumentParser(description="PivotBoss data fetcher via Upstox API")
     parser.add_argument("--symbol", default=None,
                         help="Upstox instrument key e.g. 'NSE_INDEX|NIFTY 50' or 'NSE_EQ|INE848E01016'")
-    parser.add_argument("--alias", default=None,
-                        help="Shortcut alias (NIFTY, BANKNIFTY, etc.) [default: NIFTY]")
+    parser.add_argument("--alias", default="NIFTY",
+                        help="Shortcut alias (NIFTY, BANKNIFTY, FINNIFTY, MIDCAP) [default: NIFTY]")
     parser.add_argument("--days", type=int, default=5, help="Prior daily bars to fetch [default: 5]")
     args = parser.parse_args()
 
@@ -974,16 +973,17 @@ def main():
         sys.exit(1)
 
     if args.alias:
-        symbol = INSTRUMENT_KEYS.get(args.alias.upper(), args.symbol)
-    else:
+        alias_key = args.alias.upper()
+        if alias_key not in INSTRUMENT_KEYS:
+            print(f"[ERROR] Unknown alias '{args.alias}'. Use one of: {', '.join(INSTRUMENT_KEYS.keys())}", file=sys.stderr)
+            parser.print_help()
+            sys.exit(1)
+        symbol = INSTRUMENT_KEYS[alias_key]
+    elif args.symbol:
         symbol = args.symbol
-
-    if not symbol:
-        # Default to NIFTY if neither --alias nor --symbol provided
+    else:
         symbol = INSTRUMENT_KEYS["NIFTY"]
-        print("[ERROR] Must pass --symbol or --alias (NIFTY, BANKNIFTY, etc.)", file=sys.stderr)
-        parser.print_help()
-        sys.exit(1)
+        print("[INFO] No --symbol or --alias given — defaulting to NIFTY", file=sys.stderr)
 
     # Determine today's date — find last trading session
     holidays = fetch_nse_holidays()
@@ -1010,8 +1010,10 @@ def main():
     prev_bar = daily[-1]       # most recent completed session (Aug 14)
     prev_prev_bar = daily[-2]  # session before that (Aug 13) — for two-day CPR
 
-    # Determine "next trading day" — if today is a trading day, that's the day we analyze
-    if today.weekday() < 5 and today.strftime("%Y-%m-%d") not in holidays:
+    # Determine "next trading day" — if the current session is live (market open past 09:15 IST on a
+    # business day), target today's session; otherwise pick the next trading day.
+    session_start = today.replace(hour=9, minute=15, second=0, microsecond=0)
+    if today.weekday() < 5 and today.strftime("%Y-%m-%d") not in holidays and today >= session_start:
         target_day = today
     else:
         target_day = next_trading_day(today, holidays)

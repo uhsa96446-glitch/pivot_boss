@@ -247,7 +247,7 @@ class UpstoxClient:
         df = pd.DataFrame(candles, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'oi'])
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df = df.sort_values('timestamp')
-        actual_interval_is_1min = (df['timestamp'].diff().min().total_seconds() == 60)
+        actual_interval_is_1min = (len(df) > 1 and df['timestamp'].diff().min().total_seconds() == 60)
         if interval == '3minute' and actual_interval_is_1min:
             logger.info("Resampling fallback 1-minute data to 3-minute OHLC...")
             df.set_index('timestamp', inplace=True)
@@ -478,9 +478,9 @@ class UpstoxClient:
 
     def _reload_config(self):
         try:
-            with open('config.json', 'r') as f:
+            with open(self.config_path, 'r') as f:
                 config = json.load(f)
-            self.access_token = config['upstox']['access_token']
+            self.access_token = config.get('upstox', {}).get('access_token', '')
             self.headers['Authorization'] = f'Bearer {self.access_token}'
             logger.info("Upstox Client reloaded with new access token.")
         except Exception as e:

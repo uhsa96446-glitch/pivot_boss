@@ -148,7 +148,11 @@ def _manual_login(creds):
     logger.info("\nAutomated login failed or credentials missing. Falling back to manual.")
     logger.info("1. Open this URL in your browser and log in:")
     logger.info(f"\033[94m{auth_url}\033[0m")
-    code = input("Paste the 'code' parameter from the URL here: ").strip()
+    try:
+        code = input("Paste the 'code' parameter from the URL here: ").strip()
+    except EOFError:
+        logger.error("No TTY available for manual login — set manual_fallback=False or provide credentials.")
+        return None
     return code or None
 
 
