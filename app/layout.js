@@ -7,7 +7,7 @@ export const viewport = {
 };
 
 export const metadata = {
-    title: "NIFTY Command Center — Strategy-Driven Market Profile & CPR Dashboard",
+    title: "Pivot-Boss — Strategy-Driven Market Profile & CPR Dashboard",
     description:
         "Real-time strategy-driven Market Profile and Central Pivot Range (CPR) decision engine for NIFTY 50 trading based on PivotBoss framework.",
     keywords: [
@@ -18,11 +18,11 @@ export const metadata = {
         "Market Profile",
         "Trading Dashboard",
     ],
-    authors: [{ name: "PivotBoss Engine Team" }],
+    authors: [{ name: "Gopal Das" }],
     robots: "index, follow",
     manifest: "/manifest.json",
     openGraph: {
-        title: "NIFTY Command Center",
+        title: "Pivot-Boss",
         description: "PivotBoss-aligned context, location, and execution framework for NIFTY 50.",
         type: "website",
     },
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
         <html lang="en">
             <head>
                 <meta name="description" content="Real-time strategy-driven Market Profile and Central Pivot Range (CPR) decision engine for NIFTY 50 trading based on PivotBoss framework." />
-                <title>NIFTY Command Center — Strategy-Driven Market Profile & CPR Dashboard</title>
+                <title>Pivot-Boss — Strategy-Driven Market Profile & CPR Dashboard</title>
             </head>
             <body>{children}</body>
         </html>

@@ -1020,10 +1020,10 @@ export default function Page() {
     <main>
       <header className="topbar">
         <div className="brand">
-          <div className="mark">N</div>
+          <div className="mark">G</div>
           <div>
-            <b>NIFTY</b>
-            <span>COMMAND CENTER</span>
+            <b>PIVOT-BOSS</b>
+            <span>Trading Strategy Dashboard</span>
           </div>
         </div>
         <div className="topmeta">

@@ -1,7 +1,7 @@
 {
-  "name": "NIFTY Command Center",
-  "short_name": "NIFTY CC",
-  "description": "PivotBoss Market Engine — NIFTY 50 trading analysis dashboard",
+  "name": "Pivot Boss Dashboard",
+  "short_name": "Pivot-Boss",
+  "description": "PivotBoss Market Engine — Trading analysis dashboard",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#08090c",
