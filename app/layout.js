@@ -20,6 +20,7 @@ export const metadata = {
     ],
     authors: [{ name: "PivotBoss Engine Team" }],
     robots: "index, follow",
+    manifest: "/manifest.json",
     openGraph: {
         title: "NIFTY Command Center",
         description: "PivotBoss-aligned context, location, and execution framework for NIFTY 50.",
