@@ -1011,11 +1011,17 @@ def main():
     prev_bar = daily[-1]       # most recent completed session (Aug 14)
     prev_prev_bar = daily[-2]  # session before that (Aug 13) — for two-day CPR
 
-    # Determine "next trading day" — if the current session is live (market open past 09:15 IST on a
-    # business day), target today's session; otherwise pick the next trading day.
-    session_start = today.replace(hour=9, minute=15, second=0, microsecond=0)
-    if today.weekday() < 5 and today.strftime("%Y-%m-%d") not in holidays and today >= session_start:
-        target_day = today
+    # Determine target session:
+    # - If today is a trading day AND before 15:30 IST: analyze today (live session)
+    # - If today is a trading day AND after 15:30 IST: analyze today (completed)
+    # - If today is a holiday/weekend: target = next trading day
+    today_str = today.strftime("%Y-%m-%d")
+    market_close = today.replace(hour=15, minute=30, second=0, microsecond=0)
+    if today.weekday() < 5 and today_str not in holidays:
+        if today >= market_close:
+            target_day = next_trading_day(today, holidays)
+        else:
+            target_day = today
     else:
         target_day = next_trading_day(today, holidays)
     print(f"[INFO] Target session: {target_day.strftime('%Y-%m-%d')}", file=sys.stderr)
