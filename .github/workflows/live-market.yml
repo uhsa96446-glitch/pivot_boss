@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pyotp pandas websocket-client
+          pip install -r requirements.txt
 
       - name: Run live_market.py
         run: python live_market.py --alias NIFTY 2>&1
