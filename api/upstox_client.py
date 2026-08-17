@@ -160,6 +160,8 @@ class UpstoxClient:
             self.headers['Authorization'] = f'Bearer {self.access_token}'
             if self.validate_token():
                 logger.info("Token validated from GitHub fallback.")
+                # Persist fetched token to local config so we don't hit GitHub every init
+                self._save_local_token()
                 return True
 
         # Step 3: Regenerate via OAuth
@@ -185,6 +187,18 @@ class UpstoxClient:
         except Exception as e:
             logger.error(f"Error fetching token from GitHub: {e}")
         return None
+
+    def _save_local_token(self):
+        """Persist the current access_token back to the local config file."""
+        try:
+            with open(self.config_path, 'r') as f:
+                config_data = json.load(f)
+            config_data.setdefault('upstox', {})['access_token'] = self.access_token
+            with open(self.config_path, 'w') as f:
+                json.dump(config_data, f, indent=4)
+            logger.info(f"Token saved to local config: {self.config_path}")
+        except Exception as e:
+            logger.error(f"Failed to save token to local config: {e}")
 
     def _request_with_retry(self, method, url, **kwargs):
         try:
