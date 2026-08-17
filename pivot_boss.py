@@ -1082,7 +1082,7 @@ def main():
 
     # Save to data/<symbol_alias>_<target_day>.json
     alias = args.alias.upper() if args.alias else (args.symbol.split("|")[-1][:15].replace(" ", "_").upper() if args.symbol else "DEFAULT")
-    output_path = _OUTPUT_DIR / f"{alias}_{target_day.strftime('%Y-%m-%d')}.json"
+    output_path = _OUTPUT_DIR / f"{alias}.json"
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         f.write(output_json)
