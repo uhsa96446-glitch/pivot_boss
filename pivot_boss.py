@@ -452,6 +452,42 @@ def _bucket_size(high: float, low: float) -> float:
         return 10.0
 
 
+def _resolve_symbol_from_name(name: str) -> str | None:
+    """
+    Look up instrument key by trading symbol from the cached master instruments file.
+    File: data/instruments_NSE.json
+    Returns key like 'NSE_EQ|INE040A01034' or 'NSE_INDEX|Nifty 50', or None if not found.
+    """
+    cache_file = Path(__file__).parent / "data" / "instruments_NSE.json"
+    if not cache_file.exists():
+        print(f"[WARN] Instruments cache not found at {cache_file}", file=sys.stderr)
+        return None
+
+    try:
+        with open(cache_file, "r") as f:
+            instruments = json.load(f)
+    except Exception as e:
+        print(f"[WARN] Could not load instruments cache: {e}", file=sys.stderr)
+        return None
+
+    needle = name.upper().strip()
+    for item in instruments:
+        ts = (item.get("trading_symbol") or item.get("tradingsymbol") or "").upper()
+        ik = item.get("instrument_key", "")
+        segment = (item.get("segment") or "").upper()
+        # Match equity stocks (NSE_EQ) or indices (NSE_INDEX)
+        if ts == needle and segment in ("NSE_EQ", "NSE_INDEX") and ik:
+            return ik
+
+    # Broader fallback: partial match
+    for item in instruments:
+        ts = (item.get("trading_symbol") or item.get("tradingsymbol") or "").upper()
+        if needle in ts:
+            return item.get("instrument_key", "")
+
+    return None
+
+
 def _resolve_index_futures_key(client: UpstoxClient, alias: str) -> str | None:
     """
     Resolve the nearest-month futures contract key for an index alias.
@@ -974,7 +1010,15 @@ def main():
         sys.exit(1)
 
     if args.symbol:
-        symbol = args.symbol
+        if "|" not in args.symbol:
+            # User passed a bare symbol name — resolve via instruments file
+            symbol = _resolve_symbol_from_name(args.symbol)
+            if not symbol:
+                print(f"[ERROR] Could not find instrument '{args.symbol}' in data/instruments_NSE.json", file=sys.stderr)
+                print(f"  Use --alias (NIFTY, BANKNIFTY, FINNIFTY, MIDCAP) or full key (NSE_EQ|<ISIN>)", file=sys.stderr)
+                sys.exit(1)
+        else:
+            symbol = args.symbol
     elif args.alias:
         alias_key = args.alias.upper()
         if alias_key not in INSTRUMENT_KEYS:
@@ -998,11 +1042,7 @@ def main():
     print(f"[INFO] Last trading day: {last_trade.strftime('%Y-%m-%d')}", file=sys.stderr)
     print(f"[INFO] Holidays loaded: {len(holidays)}", file=sys.stderr)
 
-    # Validate symbol format
-    if "|" not in symbol:
-        print(f"[ERROR] Invalid --symbol format '{symbol}'. Use Upstox instrument key: 'NSE_EQ|<ISIN>' or 'NSE_INDEX|<Index Name>'", file=sys.stderr)
-        print(f"  Examples: NSE_EQ|INE040A01034 (HDFCBANK) or NSE_INDEX|Nifty 50", file=sys.stderr)
-        sys.exit(1)
+    # Symbol is already resolved above
 
     try:
         daily = fetch_daily_ohlc(client, symbol, last_trade.strftime("%Y-%m-%d"), days=args.days)
