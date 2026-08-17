@@ -6,6 +6,6 @@
         "mobile_number": "8620906459",
         "pin": "990386",
         "totp_secret": "QF5BDYOLOBT6MMF4J4TROGWZUF4L7ZKN",
-        "access_token": "eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiIyOUFCSFUiLCJqdGkiOiI2YTgyNWNjZmEwYzY3MTU2YmZkMTEwMGEiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6dHJ1ZSwiaWF0IjoxNzg2OTI4MzM1LCJpc3MiOiJ1ZGFwaS1nYXRld2F5LXNlcnZpY2UiLCJleHAiOjE3ODcwMDQwMDB9.ACtEwcGZXQ3GvGf_76eSjbX7LLfqduh-J-Dlh7ZmED4"
+        "access_token": ""
     }
 }
