@@ -144,14 +144,47 @@ class UpstoxClient:
             return False
 
     def login(self):
+        """
+        Token pipeline:
+        1. Validate local token
+        2. If invalid → fetch from GitHub (shared cache)
+        3. If GitHub invalid or unavailable → regenerate via OAuth and upload to GitHub
+        """
         if self.validate_token():
             return True
+
+        # Step 2: Try fetching a fresh token from GitHub
+        github_token = self._fetch_github_token()
+        if github_token:
+            self.access_token = github_token
+            self.headers['Authorization'] = f'Bearer {self.access_token}'
+            if self.validate_token():
+                logger.info("Token validated from GitHub fallback.")
+                return True
+
+        # Step 3: Regenerate via OAuth
         if all([self.api_key, self.api_secret, self.redirect_uri]):
             logger.warning("Upstox token invalid or missing. Attempting auto-generation...")
             return self.refresh_token()
         else:
             logger.error("Missing credentials for Upstox auto-login.")
             return False
+
+    def _fetch_github_token(self):
+        """Fetch the latest access token from the GitHub cache file."""
+        url = f"https://api.github.com/repos/{USERNAME}/{REPO}/contents/{FILE_PATH}"
+        try:
+            response = requests.get(url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+            if response.status_code == 200:
+                data = response.json()
+                encoded = data.get("content", "")
+                decoded = base64.b64decode(encoded).decode().strip()
+                logger.info("Fetched token from GitHub cache.")
+                return decoded
+            logger.warning(f"GitHub token fetch failed: {response.status_code}")
+        except Exception as e:
+            logger.error(f"Error fetching token from GitHub: {e}")
+        return None
 
     def _request_with_retry(self, method, url, **kwargs):
         try:
