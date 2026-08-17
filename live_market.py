@@ -28,7 +28,7 @@ import pivot_boss
 
 _API_DIR = Path(__file__).parent / "api"
 sys.path.insert(0, str(_API_DIR))
-from upstox_client import UpstoxClient  # noqa: E402
+from upstox_client import UpstoxClient  # type: ignore # noqa: E402
 
 # Re-use constants/aliases from pivot_boss
 INSTRUMENT_KEYS = pivot_boss.INSTRUMENT_KEYS
@@ -202,6 +202,21 @@ def main():
     # ── Determine target trading session ──
     holidays = pivot_boss.fetch_nse_holidays()
     today = datetime.now()
+    is_today_trading_day = _is_trading_day(today, holidays)
+
+    # Skip run if today is a non-trading day (weekend/holiday)
+    if not is_today_trading_day:
+        print(f"[INFO] Today ({today.strftime('%Y-%m-%d')}) is a non-trading day. Skipping run.", file=sys.stderr)
+        if args.dry_run:
+            print(json.dumps({
+                "resolved_symbol": symbol,
+                "target_date": today.strftime("%Y-%m-%d"),
+                "session_mode": "skipped_non_trading_day",
+                "holidays_count": len(holidays),
+                "reason": "Today is a weekend or NSE holiday",
+            }, indent=2))
+        sys.exit(0)
+
     target_date_str, session_mode = _resolve_target_date(today, holidays)
 
     if args.dry_run:
