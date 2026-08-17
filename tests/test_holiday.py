@@ -1,4 +1,4 @@
-"""Health check for the NSE holiday API endpoint used by upstox_data_fetcher."""
+"""Health check for the NSE holiday API endpoint used by pivot_boss."""
 import requests
 
 

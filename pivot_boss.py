@@ -7,7 +7,7 @@ computes the next trading day with full scenario coverage.
 
 Usage:
     1. Configure credentials in api/upstox.json OR pass via CLI args (see --help)
-    2. Run:  python upstox_data_fetcher.py --alias NIFTY --days 5
+    2. Run:  python pivot_boss.py --alias NIFTY --days 5
     3. Output: prints JSON with all PivotBoss data for next trading day
 
 Data fetched per the PivotBoss playbook:

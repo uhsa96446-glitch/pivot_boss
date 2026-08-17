@@ -12,7 +12,7 @@ PivotBoss Market Engine — Python-based trading analysis tool that fetches hist
 
 ```
 pivot_boss/
-├── upstox_data_fetcher.py      # Main CLI: fetch data → compute pivots → output scenarios
+├── pivot_boss.py               # Main CLI: fetch data → compute pivots → output scenarios
 ├── api/
 │   ├── upstox_client.py        # Reusable Upstox client (historical data, option chains, WebSocket)
 │   ├── upstox_login.py         # OAuth authentication module (auto OTP/TOTP/PIN flow)
@@ -31,25 +31,25 @@ pivot_boss/
 ### Run the main data fetcher
 ```bash
 # Default: NIFTY index, last trading day
-python upstox_data_fetcher.py
+python pivot_boss.py
 
 # Specify index by alias
-python upstox_data_fetcher.py --alias NIFTY
-python upstox_data_fetcher.py --alias BANKNIFTY
-python upstox_data_fetcher.py --alias FINNIFTY
-python upstox_data_fetcher.py --alias MIDCAP
+python pivot_boss.py --alias NIFTY
+python pivot_boss.py --alias BANKNIFTY
+python pivot_boss.py --alias FINNIFTY
+python pivot_boss.py --alias MIDCAP
 
 # Specify by full Upstox instrument key
-python upstox_data_fetcher.py --symbol "NSE_INDEX|Nifty 50"
+python pivot_boss.py --symbol "NSE_INDEX|Nifty 50"
 
 # Fetch more historical bars for analysis
-python upstox_data_fetcher.py --alias NIFTY --days 5
+python pivot_boss.py --alias NIFTY --days 5
 ```
 
 ### Fresh NSE holiday fetch
 ```bash
 # Force refresh holidays from NSE API
-python -c "from upstox_data_fetcher import fetch_nse_holidays, _parse_holiday_json, _HOLIDAY_CACHE; import json; holidays = fetch_nse_holidays(); print(json.dumps(holidays, indent=2))"
+python -c "from pivot_boss import fetch_nse_holidays, _parse_holiday_json, _HOLIDAY_CACHE; import json; holidays = fetch_nse_holidays(); print(json.dumps(holidays, indent=2))"
 ```
 
 ### Validate authentication
@@ -141,7 +141,7 @@ Market data endpoints:
 
 ## Day Type & Scenario Classification
 
-`compute_day_type()` in `upstox_data_fetcher.py`:
+`compute_day_type()` in `pivot_boss.py`:
 - **TREND**: Narrow CPR + narrow Value Area + narrow Camarilla → strong directional setup
 - **RANGE**: Wide CPR or wide Value Area → sideways trading range
 - **SIDEWAYS**: Mixed widths or normal range → opportunistic fades
