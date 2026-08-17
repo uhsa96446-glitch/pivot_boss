@@ -1090,8 +1090,8 @@ export default function Page() {
 
 
         <footer>
-          <span>NIFTY Command Center · strategy-driven static dashboard</span>
-          <span>Source: supplied NIFTY.json · Educational use only</span>
+          <span>PivotBoss Market Engine — Trading analysis dashboard</span>
+          <span>Created by · GOPAL DAS</span>
         </footer>
       </div>
     </main>
