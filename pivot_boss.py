@@ -37,7 +37,9 @@ from urllib.parse import quote as _url_quote  # noqa: E402
 
 NSE_HOLIDAY_URL = "https://www.nseindia.com/api/holiday-master?type=trading"
 UPSTOX_BASE = "https://api.upstox.com/v2"
+UPSTOX_V3_BASE = "https://api.upstox.com/v3"
 REGULAR_SESSION_OPEN = 9  # 09:15 IST
+MARKET_CLOSE_HOUR = 15  # 15:30 IST — market close
 
 # Instrument key templates for Upstox (spot/index keys)
 INSTRUMENT_KEYS = {
@@ -249,10 +251,89 @@ def fetch_intraday_ohlc(
                            "oi": c.get("oi", 0)})
     # Filter to only candles on the target date (Upstox may return multiple days)
     target_date = to_date.replace("-", "")
-    filtered = [b for b in result if b["timestamp"].replace("-", "")[:8] == target_date]
-    if filtered:
-        result = filtered
+    result = [b for b in result if b["timestamp"].replace("-", "")[:8] == target_date]
     result.sort(key=lambda x: x["timestamp"])  # Upstox returns descending, normalize to ascending
+    return result
+
+
+def fetch_today_daily_bar(client: UpstoxClient, symbol: str, today_str: str) -> dict | None:
+    """
+    Synthesize a daily OHLC bar for *today* by aggregating 1-minute intraday
+    candles from the Upstox V3 intra-day endpoint.
+
+    The V2 daily historical candle API excludes the current trading day, so on a
+    post-close trading day we fall back to V3 intraday candles and roll them up.
+
+    Returns a dict {timestamp, open, high, low, close, volume, oi} or None.
+    """
+    encoded_symbol = _url_quote(symbol, safe="")
+    interval_val = "1"
+    url = f"{UPSTOX_V3_BASE}/historical-candle/intraday/{encoded_symbol}/minutes/{interval_val}"
+    try:
+        resp = client._request_with_retry('GET', url)
+        resp.raise_for_status()
+        candles = resp.json().get("data", {}).get("candles", [])
+        if not candles:
+            return None
+        # Parse array-format candles: [ts, o, h, l, c, v, oi]
+        rows = []
+        for c in candles:
+            if isinstance(c, list) and len(c) >= 5:
+                ts = c[0]
+                # Filter to today's date
+                if today_str not in str(ts)[:10]:
+                    continue
+                rows.append({
+                    "timestamp": ts,
+                    "open": c[1], "high": c[2], "low": c[3], "close": c[4],
+                    "volume": c[5] if len(c) > 5 else 0,
+                    "oi": c[6] if len(c) > 6 else 0,
+                })
+        if not rows:
+            return None
+        rows.sort(key=lambda x: x["timestamp"])
+        first = rows[0]
+        total_vol = sum(r["volume"] for r in rows)
+        return {
+            "timestamp": today_str,
+            "open": first["open"],
+            "high": max(r["high"] for r in rows),
+            "low": min(r["low"] for r in rows),
+            "close": rows[-1]["close"],
+            "volume": total_vol,
+            "oi": rows[-1].get("oi", 0),
+        }
+    except Exception as e:
+        sys.stderr.write(f"[WARN] fetch_today_daily_bar failed: {e}\n")
+        return None
+
+
+def _fetch_intraday_v3(client: UpstoxClient, symbol: str, target_date: str, minutes: str = "15") -> list[dict]:
+    """
+    Fetch intraday candles from the Upstox V3 intra-day endpoint (which includes
+    the current trading day, unlike the V2 daily-candle endpoint).
+
+    Endpoint: GET /v3/historical-candle/intraday/{instrument_key}/minutes/{interval}
+    """
+    encoded_symbol = _url_quote(symbol, safe="")
+    url = f"{UPSTOX_V3_BASE}/historical-candle/intraday/{encoded_symbol}/minutes/{minutes}"
+    resp = client._request_with_retry('GET', url)
+    resp.raise_for_status()
+    candles = resp.json().get("data", {}).get("candles", [])
+    result = []
+    target = target_date.replace("-", "")
+    for c in candles:
+        if isinstance(c, list) and len(c) >= 5:
+            ts = c[0]
+            if target not in str(ts).replace("-", "")[:8]:
+                continue
+            result.append({
+                "timestamp": ts, "open": c[1], "high": c[2],
+                "low": c[3], "close": c[4],
+                "volume": c[5] if len(c) > 5 else 0,
+                "oi": c[6] if len(c) > 6 else 0,
+            })
+    result.sort(key=lambda x: x["timestamp"])
     return result
 
 
@@ -343,15 +424,19 @@ def compute_value_area(
         if fut_key:
             try:
                 spot_1min = fetch_intraday_ohlc(client, symbol, day_str, interval="1minute")
+                if not spot_1min:
+                    spot_1min = _fetch_intraday_v3(client, symbol, day_str, "1")
                 fut_1min = fetch_intraday_ohlc(client, fut_key, day_str, interval="1minute")
+                if not fut_1min:
+                    fut_1min = _fetch_intraday_v3(client, fut_key, day_str, "1")
                 # Ensure both are sorted ascending by timestamp (Upstox returns descending)
                 spot_1min.sort(key=lambda x: x["timestamp"])
                 fut_1min.sort(key=lambda x: x["timestamp"])
                 if spot_1min and fut_1min:
-                    # Build futures volume lookup by timestamp
+                    # Build futures volume lookup by timestamp (normalized to seconds precision)
                     fut_vol = {}
                     for bar in fut_1min:
-                        ts = bar["timestamp"]
+                        ts = _normalize_ts(bar["timestamp"])
                         v = bar.get("volume", 0)
                         if v > 0:
                             fut_vol[ts] = v
@@ -361,7 +446,7 @@ def compute_value_area(
                     hist = {}
                     total_vol = 0
                     for bar in spot_1min:
-                        ts = bar["timestamp"]
+                        ts = _normalize_ts(bar["timestamp"])
                         v = fut_vol.get(ts, 0)
                         if v > 0:
                             mid = (bar["high"] + bar["low"]) / 2
@@ -398,6 +483,19 @@ def compute_value_area(
         "method": "heuristic",
         "note": "No volume/OI data available — using heuristic estimate.",
     }
+
+
+def _normalize_ts(ts: str) -> str:
+    """Normalize a candle timestamp to YYYY-MM-DD HH:MM:SS for cross-API matching."""
+    ts_str = str(ts)
+    # Strip timezone designator (+05:30 etc.) if present
+    if "+" in ts_str:
+        ts_str = ts_str.split("+")[0]
+    # Convert T separator to space, truncate to seconds
+    ts_str = ts_str.replace("T", " ")
+    if "." in ts_str:
+        ts_str = ts_str.split(".")[0]
+    return ts_str
 
 
 def _compute_va_from_histogram(hist: dict[float, float], total: float) -> dict:
@@ -519,6 +617,9 @@ def _fetch_spot_volume_profile(
     """
     try:
         intraday = fetch_intraday_ohlc(client, symbol, day_str, interval="1minute")
+        if not intraday:
+            # V2 historical-candle excludes current trading day — try V3 intraday
+            intraday = _fetch_intraday_v3(client, symbol, day_str, "1")
         if not intraday:
             return None
         # Check if any volume is non-zero
@@ -919,25 +1020,24 @@ def build_scenario_report(
     prev_pivots = compute_pivots(prev_prev_bar)
     relationship = two_day_relationship(piv, prev_pivots)
 
-    # For opening classification, we need today's open (if session has started)
+    # For opening classification, we need today's open (if session has started).
+    # The daily OHLC API excludes the current trading day, so use the first
+    # intraday candle's open when available (covers both live and post-close runs).
     to_str = next_trade_day.strftime("%Y-%m-%d")
     today_now = datetime.now()
     today_bar = {}
     open_price = None
-    # Only try to fetch if the target day is today or earlier AND we're in-session
-    if next_trade_day.date() <= today_now.date():
-        # Must be after 09:15 IST for regular session open
-        if today_now.hour >= 9:
-            try:
-                today_bars = fetch_daily_ohlc(client, symbol, to_str, days=1)
-                if today_bars:
-                    today_bar = today_bars[-1]
-                    # Verify the bar date matches our target (not stale fetch)
-                    bar_date = today_bar.get("timestamp", "")[:10]
-                    if bar_date == to_str:
-                        open_price = today_bar.get("open", 0)
-            except Exception:
-                pass
+    if next_trade_day.date() <= today_now.date() and today_now.hour >= MARKET_CLOSE_HOUR:
+        # Market has closed — prev_bar already holds today's synthesized bar.
+        # No opening classification needed for the *next* target day.
+        pass
+    elif next_trade_day.date() <= today_now.date() and today_now.hour >= REGULAR_SESSION_OPEN:
+        # Today is the target day and session is open — derive open from intraday.
+        if intraday:
+            first = intraday[0]
+            ts_date = str(first.get("timestamp", ""))[:10]
+            if ts_date == to_str:
+                open_price = first.get("open", 0)
 
     # First 15-minute candle of today's session (for opening confirmation)
     first_15m = None
@@ -1054,16 +1154,30 @@ def main():
         print(f"[ERROR] Need at least 2 daily bars, got {len(daily) if daily else 0}", file=sys.stderr)
         sys.exit(1)
 
-    prev_bar = daily[-1]       # most recent completed session (Aug 14)
-    prev_prev_bar = daily[-2]  # session before that (Aug 13) — for two-day CPR
+    # Determine if today is a trading day and whether market has closed
+    today_str = today.strftime("%Y-%m-%d")
+    is_trading_day = today.weekday() < 5 and today_str not in holidays
+    market_close = today.replace(hour=15, minute=30, second=0, microsecond=0)
+    market_closed = is_trading_day and today >= market_close
+
+    # If today is a trading day and market has closed, synthesize today's bar
+    # from V3 intraday candles (the daily OHLC API won't include today).
+    if market_closed:
+        today_bar = fetch_today_daily_bar(client, symbol, today_str)
+        if today_bar:
+            print(f"[INFO] Appending synthesized today's bar ({today_str}) via V3 intraday", file=sys.stderr)
+            daily = daily + [today_bar]
+        else:
+            print(f"[WARN] Could not fetch today's data via V3 intraday; falling back to last_trade data", file=sys.stderr)
+
+    prev_bar = daily[-1]       # most recent completed session
+    prev_prev_bar = daily[-2]  # session before that — for two-day CPR
 
     # Determine target session:
     # - If today is a trading day AND before 15:30 IST: analyze today (live session)
-    # - If today is a trading day AND after 15:30 IST: analyze today (completed)
+    # - If today is a trading day AND after 15:30 IST: target = next trading day
     # - If today is a holiday/weekend: target = next trading day
-    today_str = today.strftime("%Y-%m-%d")
-    market_close = today.replace(hour=15, minute=30, second=0, microsecond=0)
-    if today.weekday() < 5 and today_str not in holidays:
+    if is_trading_day:
         if today >= market_close:
             target_day = next_trading_day(today, holidays)
         else:
@@ -1072,8 +1186,16 @@ def main():
         target_day = next_trading_day(today, holidays)
     print(f"[INFO] Target session: {target_day.strftime('%Y-%m-%d')}", file=sys.stderr)
 
+    # Fetch intraday candles for the target session.
+    # When target_day is today (live session), V2 historical-candle endpoint may
+    # exclude today's data, so fall back to V3 intraday API which includes the
+    # current trading day.
+    target_day_str = target_day.strftime("%Y-%m-%d")
     try:
-        intraday = fetch_intraday_ohlc(client, symbol, target_day.strftime("%Y-%m-%d"), "15minute")
+        intraday = fetch_intraday_ohlc(client, symbol, target_day_str, "15minute")
+        if not intraday and target_day.date() <= today.date():
+            # V2 didn't return current-day data — try V3 intraday endpoint
+            intraday = _fetch_intraday_v3(client, symbol, target_day_str, "15")
     except Exception:
         intraday = []
 
