@@ -24,6 +24,9 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional  # noqa: E402
+import pytz
+
+IST = pytz.timezone("Asia/Kolkata")
 
 # ────────────────────── Auto-login integration ──────────────────────
 # Uses the existing api/upstox_login.py + api/upstox_client.py
@@ -77,7 +80,7 @@ def fetch_nse_holidays() -> list[str]:
             with open(_HOLIDAY_CACHE, "r") as f:
                 raw = json.load(f)
             # Check if cached holidays cover the current year
-            current_year = str(datetime.now().year)
+            current_year = str(datetime.now(IST).year)
             holiday_dates = _parse_holiday_json(raw)
             covers_year = any(current_year in d for d in holiday_dates)
             if covers_year:
@@ -1024,7 +1027,7 @@ def build_scenario_report(
     # The daily OHLC API excludes the current trading day, so use the first
     # intraday candle's open when available (covers both live and post-close runs).
     to_str = next_trade_day.strftime("%Y-%m-%d")
-    today_now = datetime.now()
+    today_now = datetime.now(IST)
     today_bar = {}
     open_price = None
     if next_trade_day.date() <= today_now.date() and today_now.hour >= MARKET_CLOSE_HOUR:
@@ -1130,9 +1133,9 @@ def main():
         symbol = INSTRUMENT_KEYS["NIFTY"]
         print("[INFO] No --symbol or --alias given — defaulting to NIFTY", file=sys.stderr)
 
-    # Determine today's date — find last trading session
+    # Determine today's date — find last trading session (IST timezone)
     holidays = fetch_nse_holidays()
-    today = datetime.now()
+    today = datetime.now(IST)
 
     # Step back to the most recent trading day
     last_trade = today - timedelta(days=1)
@@ -1160,18 +1163,15 @@ def main():
     market_close = today.replace(hour=15, minute=30, second=0, microsecond=0)
     market_closed = is_trading_day and today >= market_close
 
-    # Synthesize current session bar via V3 intraday when:
-    # 1. Today is a trading day and market has closed (post-close weekday)
-    # 2. Today is a non-trading day (weekend/holiday) — V2 daily excludes
-    #    the last trading day's current session
-    if market_closed or not is_today_trading_day:
-        target_fetch_str = today_str if is_trading_day else last_trade.strftime("%Y-%m-%d")
-        today_bar = fetch_today_daily_bar(client, symbol, target_fetch_str)
+    # If today is a trading day and market has closed, synthesize today's bar
+    # from V3 intraday candles (the daily OHLC API won't include today).
+    if market_closed:
+        today_bar = fetch_today_daily_bar(client, symbol, today_str)
         if today_bar:
-            print(f"[INFO] Appending synthesized bar ({target_fetch_str}) via V3 intraday", file=sys.stderr)
+            print(f"[INFO] Appending synthesized today's bar ({today_str}) via V3 intraday", file=sys.stderr)
             daily = daily + [today_bar]
         else:
-            print(f"[WARN] Could not fetch V3 intraday; falling back to last_trade data", file=sys.stderr)
+            print(f"[WARN] Could not fetch today's data via V3 intraday; falling back to last_trade data", file=sys.stderr)
 
     prev_bar = daily[-1]       # most recent completed session
     prev_prev_bar = daily[-2]  # session before that — for two-day CPR

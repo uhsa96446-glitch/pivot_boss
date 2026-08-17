@@ -22,6 +22,9 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote as _url_quote
+import pytz
+
+IST = pytz.timezone("Asia/Kolkata")
 
 # ────────────────────── Reuse pivot_boss.py system ──────────────────────
 import pivot_boss
@@ -78,7 +81,7 @@ def fetch_opening_candle_report(
     # ── 1-minute candles from 09:15 onwards ──
     # Use V3 intraday endpoint for today's session; V2 historical for past sessions.
     # V2 historical endpoint doesn't return today's completed candles.
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = datetime.now(IST).strftime("%Y-%m-%d")
     try:
         if target_date_str == today_str:
             # V3 intraday: current trading day only, returns candles descending (sorted ascending by client)
@@ -162,12 +165,10 @@ def _resolve_target_date(today: datetime, holidays: list[str]) -> tuple[str, str
     """
     today_str = today.strftime("%Y-%m-%d")
     is_trading_day = _is_trading_day(today, holidays)
-    # Convert passed-in naive datetime to IST
-    try:
-        import pytz
-        ist_now = pytz.timezone("Asia/Kolkata").localize(today)
-    except ImportError:
-        ist_now = today
+    # Ensure we're working in IST timezone
+    import pytz
+    ist = pytz.timezone("Asia/Kolkata")
+    ist_now = today if today.tzinfo else ist.localize(today)
 
     # First 15-min candle closes at 09:30 IST — only consider today "live" after that
     is_after_0930 = ist_now.hour >= 10 or (ist_now.hour == 9 and ist_now.minute >= 30)
@@ -201,7 +202,7 @@ def main():
 
     # ── Determine target trading session ──
     holidays = pivot_boss.fetch_nse_holidays()
-    today = datetime.now()
+    today = datetime.now(IST)
     is_today_trading_day = _is_trading_day(today, holidays)
 
     # Skip run if today is a non-trading day (weekend/holiday)
