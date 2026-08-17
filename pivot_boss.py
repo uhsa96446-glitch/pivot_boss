@@ -58,7 +58,7 @@ INDEX_FUT_NAMES = {
 # ────────────────────── Holiday Cache ──────────────────────
 
 _HOLIDAY_CACHE = Path(__file__).parent / "data" / "nse_holidays.json"
-_OUTPUT_DIR = Path(__file__).parent / "data"
+_OUTPUT_DIR = Path(__file__).parent / "public/data"
 
 
 def fetch_nse_holidays() -> list[str]:
