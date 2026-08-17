@@ -371,7 +371,7 @@ def compute_value_area(
 
                     if total_vol > 0:
                         result = _compute_va_from_histogram(hist, total_vol)
-                        result["method"] = "spot_ohlc_futures_volume"
+                        result["method"] = "futures_volume_profile"
                         result["total_volume"] = total_vol
                         result["futures_key"] = fut_key
                         return result
