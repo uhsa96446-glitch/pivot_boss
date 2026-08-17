@@ -998,6 +998,12 @@ def main():
     print(f"[INFO] Last trading day: {last_trade.strftime('%Y-%m-%d')}", file=sys.stderr)
     print(f"[INFO] Holidays loaded: {len(holidays)}", file=sys.stderr)
 
+    # Validate symbol format
+    if "|" not in symbol:
+        print(f"[ERROR] Invalid --symbol format '{symbol}'. Use Upstox instrument key: 'NSE_EQ|<ISIN>' or 'NSE_INDEX|<Index Name>'", file=sys.stderr)
+        print(f"  Examples: NSE_EQ|INE040A01034 (HDFCBANK) or NSE_INDEX|Nifty 50", file=sys.stderr)
+        sys.exit(1)
+
     try:
         daily = fetch_daily_ohlc(client, symbol, last_trade.strftime("%Y-%m-%d"), days=args.days)
     except Exception as e:
