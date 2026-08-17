@@ -960,8 +960,8 @@ def main():
     parser = argparse.ArgumentParser(description="PivotBoss data fetcher via Upstox API")
     parser.add_argument("--symbol", default=None,
                         help="Upstox instrument key e.g. 'NSE_INDEX|NIFTY 50' or 'NSE_EQ|INE848E01016'")
-    parser.add_argument("--alias", default="NIFTY",
-                        help="Shortcut alias (NIFTY, BANKNIFTY, FINNIFTY, MIDCAP) [default: NIFTY]")
+    parser.add_argument("--alias", default=None,
+                        help="Shortcut alias (NIFTY, BANKNIFTY, FINNIFTY, MIDCAP)")
     parser.add_argument("--days", type=int, default=5, help="Prior daily bars to fetch [default: 5]")
     args = parser.parse_args()
 
@@ -973,15 +973,15 @@ def main():
         print(f"[ERROR] Upstox client init failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    if args.alias:
+    if args.symbol:
+        symbol = args.symbol
+    elif args.alias:
         alias_key = args.alias.upper()
         if alias_key not in INSTRUMENT_KEYS:
             print(f"[ERROR] Unknown alias '{args.alias}'. Use one of: {', '.join(INSTRUMENT_KEYS.keys())}", file=sys.stderr)
             parser.print_help()
             sys.exit(1)
         symbol = INSTRUMENT_KEYS[alias_key]
-    elif args.symbol:
-        symbol = args.symbol
     else:
         symbol = INSTRUMENT_KEYS["NIFTY"]
         print("[INFO] No --symbol or --alias given — defaulting to NIFTY", file=sys.stderr)
@@ -1035,7 +1035,7 @@ def main():
     output_json = json.dumps(report, indent=2)
 
     # Save to data/<symbol_alias>_<target_day>.json
-    alias = args.alias.upper() if args.alias else "DEFAULT"
+    alias = args.alias.upper() if args.alias else (args.symbol.split("|")[-1][:15].replace(" ", "_").upper() if args.symbol else "DEFAULT")
     output_path = _OUTPUT_DIR / f"{alias}_{target_day.strftime('%Y-%m-%d')}.json"
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
