@@ -20,6 +20,7 @@ Data fetched per the PivotBoss playbook:
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -57,31 +58,69 @@ INDEX_FUT_NAMES = {
 
 # ────────────────────── Holiday Cache ──────────────────────
 
+_HOLIDAY_CACHE = Path(__file__).parent / "data" / "nse_holidays.json"
+
+
 def fetch_nse_holidays() -> list[str]:
-    """Fetch NSE trading holidays from official JSON. Returns list of YYYY-MM-DD dates."""
+    """
+    Fetch NSE trading holidays from official JSON. Returns list of YYYY-MM-DD dates.
+
+    Uses a cached JSON file (data/nse_holidays.json) that is refreshed annually.
+    Set FORCE_REFRESH_NSE_HOLIDAYS env var to force re-download.
+    """
+    # Try cache first (refresh annually or when forced)
+    force_refresh = os.environ.get("FORCE_REFRESH_NSE_HOLIDAYS", "").lower() in ("1", "true", "yes")
+    if _HOLIDAY_CACHE.exists() and not force_refresh:
+        try:
+            with open(_HOLIDAY_CACHE, "r") as f:
+                raw = json.load(f)
+            # Check if cached holidays cover the current year
+            current_year = str(datetime.now().year)
+            holiday_dates = _parse_holiday_json(raw)
+            covers_year = any(current_year in d for d in holiday_dates)
+            if covers_year:
+                return holiday_dates
+        except Exception:
+            pass  # fall through to fetch
+
+    # Fetch from NSE API
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        resp = requests.get(NSE_HOLIDAY_URL, headers=headers, timeout=15)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+        }
+        # NSE requires session cookies — hit the homepage first
+        session = requests.Session()
+        session.get("https://www.nseindia.com", headers=headers, timeout=15)
+        resp = session.get(NSE_HOLIDAY_URL, headers=headers, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 
-        holidays = []
-        # Structure: {"holiday_info": [...], ...} or {"CALENDAR_TYPE": {...}}
-        for payload in data.values():
-            if isinstance(payload, list):
-                for entry in payload:
-                    dt = _parse_nse_date(entry.get("Date") or entry.get("date"))
-                    if dt:
-                        holidays.append(dt)
-            elif isinstance(payload, dict):
-                for inner in payload.get("holiday_info", []):
-                    dt = _parse_nse_date(inner.get("Date") or inner.get("date"))
-                    if dt:
-                        holidays.append(dt)
-        return holidays
+        # Save to cache
+        try:
+            _HOLIDAY_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            with open(_HOLIDAY_CACHE, "w") as f:
+                json.dump(data, f)
+        except Exception:
+            pass  # cache write failed, proceed with live data
+
+        return _parse_holiday_json(data)
     except Exception as e:
         print(f"[WARN] Could not fetch NSE holidays ({e}). Using weekends-only fallback.", file=sys.stderr)
         return []
+
+
+def _parse_holiday_json(data: dict) -> list[str]:
+    """Parse NSE holiday JSON into list of YYYY-MM-DD strings."""
+    holidays = []
+    for payload in data.values():
+        if isinstance(payload, list):
+            for entry in payload:
+                dt = _parse_nse_date(entry.get("tradingDate") or entry.get("Date") or entry.get("date"))
+                if dt:
+                    holidays.append(dt)
+    return sorted(set(holidays))
 
 
 def _parse_nse_date(raw: str | None) -> Optional[str]:
@@ -846,17 +885,22 @@ def build_scenario_report(
     # For opening classification, we need today's open (if session has started)
     to_str = next_trade_day.strftime("%Y-%m-%d")
     today_now = datetime.now()
-    # Only try to fetch if the target day is today or earlier
+    today_bar = {}
+    open_price = None
+    # Only try to fetch if the target day is today or earlier AND we're in-session
     if next_trade_day.date() <= today_now.date():
-        try:
-            today_bars = fetch_daily_ohlc(client, symbol, to_str, days=1)
-            today_bar = today_bars[-1] if today_bars else {}
-            open_price = today_bar.get("open", 0)
-        except Exception:
-            today_bar, open_price = {}, None
-    else:
-        today_bar = {}
-        open_price = None
+        # Must be after 09:15 IST for regular session open
+        if today_now.hour >= 9:
+            try:
+                today_bars = fetch_daily_ohlc(client, symbol, to_str, days=1)
+                if today_bars:
+                    today_bar = today_bars[-1]
+                    # Verify the bar date matches our target (not stale fetch)
+                    bar_date = today_bar.get("timestamp", "")[:10]
+                    if bar_date == to_str:
+                        open_price = today_bar.get("open", 0)
+            except Exception:
+                pass
 
     # First 15-minute candle of today's session (for opening confirmation)
     first_15m = None
@@ -916,7 +960,7 @@ def main():
     parser = argparse.ArgumentParser(description="PivotBoss data fetcher via Upstox API")
     parser.add_argument("--symbol", default=None,
                         help="Upstox instrument key e.g. 'NSE_INDEX|NIFTY 50' or 'NSE_EQ|INE848E01016'")
-    parser.add_argument("--alias", default="NIFTY",
+    parser.add_argument("--alias", default=None,
                         help="Shortcut alias (NIFTY, BANKNIFTY, etc.) [default: NIFTY]")
     parser.add_argument("--days", type=int, default=5, help="Prior daily bars to fetch [default: 5]")
     args = parser.parse_args()
@@ -929,9 +973,14 @@ def main():
         print(f"[ERROR] Upstox client init failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    symbol = args.alias and INSTRUMENT_KEYS.get(args.alias.upper().upper(), args.symbol) or args.symbol
+    if args.alias:
+        symbol = INSTRUMENT_KEYS.get(args.alias.upper(), args.symbol)
+    else:
+        symbol = args.symbol
 
     if not symbol:
+        # Default to NIFTY if neither --alias nor --symbol provided
+        symbol = INSTRUMENT_KEYS["NIFTY"]
         print("[ERROR] Must pass --symbol or --alias (NIFTY, BANKNIFTY, etc.)", file=sys.stderr)
         parser.print_help()
         sys.exit(1)
