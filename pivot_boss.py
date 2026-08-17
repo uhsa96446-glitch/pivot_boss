@@ -58,6 +58,7 @@ INDEX_FUT_NAMES = {
 # ────────────────────── Holiday Cache ──────────────────────
 
 _HOLIDAY_CACHE = Path(__file__).parent / "data" / "nse_holidays.json"
+_OUTPUT_DIR = Path(__file__).parent / "data"
 
 
 def fetch_nse_holidays() -> list[str]:
@@ -1025,7 +1026,17 @@ def main():
         intraday = []
 
     report = build_scenario_report(symbol, client, prev_bar, prev_prev_bar, intraday, target_day)
-    print(json.dumps(report, indent=2))
+    output_json = json.dumps(report, indent=2)
+
+    # Save to data/<symbol_alias>_<target_day>.json
+    alias = args.alias.upper() if args.alias else "DEFAULT"
+    output_path = _OUTPUT_DIR / f"{alias}_{target_day.strftime('%Y-%m-%d')}.json"
+    _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w") as f:
+        f.write(output_json)
+    print(f"[INFO] Report saved to {output_path}", file=sys.stderr)
+
+    print(output_json)
 
 
 if __name__ == "__main__":
