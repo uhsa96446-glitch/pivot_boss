@@ -420,13 +420,21 @@ function Scenarios({ st, data, ltp }) {
   const isPullbackToCPR = Boolean(candleData && (candleData.low <= (st.pv?.CPR_TOP || 0) && candleData.high >= (st.pv?.CPR_BOTTOM || 0)));
 
   // Initial opening classification matching (Playbook standard)
+  // CPR pullback logic only applies on NON-gap days (in-range opens)
+  const isInRangeOpen = !isGapUp && !isGapDown;
+  // CASE G: Inside Day - twoDayRel is INSIDE OR CPR range is inside prior day range
+  const cprIsInsidePriorDay = (st.pv?.CPR_TOP <= st.p?.high) && (st.pv?.CPR_BOTTOM >= st.p?.low);
+  const isInsideDay = st.twoDayRel === "INSIDE" || cprIsInsidePriorDay;
+
   let activeCaseKey = null;
-  if (st.twoDayRel === "INSIDE") activeCaseKey = "case_g_inside_day";
+  if (isInsideDay) activeCaseKey = "case_g_inside_day";
   else if (isGapUp && is15mRejected) activeCaseKey = "case_d_gap_reversal";
   else if (isGapDown && is15mRejected) activeCaseKey = "case_e_gap_reversal";
-  else if (isHigherValue && isPullbackToCPR) activeCaseKey = "case_f_cpr_bullish_pullback";
-  else if (isLowerValue && isPullbackToCPR) activeCaseKey = "case_f2_cpr_bearish_pullback";
+  // CASE H: Only fires on gap days where the gap was NOT rejected (price accepted outside)
   else if (st.cprWidthForecast?.includes("NARROW") && (isGapUp || isGapDown) && !is15mRejected) activeCaseKey = "case_h_double_distribution";
+  // CASE F/F2: Only on in-range opens with confirmed trend context
+  else if (isInRangeOpen && isHigherValue && isPullbackToCPR) activeCaseKey = "case_f_cpr_bullish_pullback";
+  else if (isInRangeOpen && isLowerValue && isPullbackToCPR) activeCaseKey = "case_f2_cpr_bearish_pullback";
   else if (openClass === "IN_VALUE" || openClass === "IN_RANGE_IN_VALUE") activeCaseKey = "case_a_in_range_in_value";
   else if (openClass === "ABOVE_VALUE" || openClass === "IN_RANGE_ABOVE_VALUE") activeCaseKey = "case_b_in_range_above_value";
   else if (openClass === "BELOW_VALUE" || openClass === "IN_RANGE_BELOW_VALUE") activeCaseKey = "case_c_in_range_below_value";
@@ -482,12 +490,12 @@ function Scenarios({ st, data, ltp }) {
     ["CASE G · INSIDE DAY BREAKOUT (COMPRESSION)", {
       condition: "INSIDE_DAY_COMPRESSION",
       bias: "NEUTRAL",
-      primary: `Prior day is Inside Day or CPR is Inside (${st.twoDayRel}). Wait for 15m breakout above PDH (${st.p?.high?.toFixed(1) || "—"}) → LONG`,
-      primary_target: `PDH → R1 (${st.pv?.R1?.toFixed(1) || "—"}) → R2 (${st.pv?.R2?.toFixed(1) || "—"})`,
-      contingency: `If 15m breaks below PDL (${st.p?.low?.toFixed(1) || "—"}) → SHORT`,
-      contingency_target: `PDL → S1 (${st.pv?.S1?.toFixed(1) || "—"}) → S2 (${st.pv?.S2?.toFixed(1) || "—"})`,
-      failure: "False breakout at 2-day high/low boundaries",
-      no_trade: "Do not trade inside the 2-day high-low compression range"
+      primary: `2-Day Value = ${st.twoDayRel}. Wait for 15m breakout/breakdown of prior day boundaries. Break above PDH (${st.p?.high?.toFixed(1) || "—"}) → LONG`,
+      primary_target: `PDH (${st.p?.high?.toFixed(1) || "—"}) → R1 (${st.pv?.R1?.toFixed(1) || "—"}) → R2 (${st.pv?.R2?.toFixed(1) || "—"})`,
+      contingency: `Break below PDL (${st.p?.low?.toFixed(1) || "—"}) → SHORT`,
+      contingency_target: `PDL (${st.p?.low?.toFixed(1) || "—"}) → S1 (${st.pv?.S1?.toFixed(1) || "—"}) → S2 (${st.pv?.S2?.toFixed(1) || "—"})`,
+      failure: "False breakout at 2-day high/low boundaries — do NOT chase",
+      no_trade: "Do not trade inside the prior day range compression zone"
     }, "neutral", "case_g_inside_day"],
     ["CASE H · DOUBLE DISTRIBUTION TREND DAY", {
       condition: "NARROW_CPR AND RANGE_EXTENSION",
@@ -504,12 +512,12 @@ function Scenarios({ st, data, ltp }) {
     ["CASE I · FLOOR PIVOT BREAKOUT LADDER", {
       condition: "R1_OR_S1_BREAKOUT",
       bias: "NEUTRAL",
-      primary: `If price breaks R1 (${st.pv?.R1?.toFixed(1) || "—"}) & holds → LONG continuation ladder`,
-      primary_target: `R2 (${st.pv?.R2?.toFixed(1) || "—"}) → R3 (${st.pv?.R3?.toFixed(1) || "—"}) → R4 (${st.pv?.R4?.toFixed(1) || "—"})`,
-      contingency: `If price breaks S1 (${st.pv?.S1?.toFixed(1) || "—"}) & holds → SHORT continuation ladder`,
-      contingency_target: `S2 (${st.pv?.S2?.toFixed(1) || "—"}) → S3 (${st.pv?.S3?.toFixed(1) || "—"}) → S4 (${st.pv?.S4?.toFixed(1) || "—"})`,
-      failure: "Pivot level rejects breakout attempt",
-      no_trade: "Avoid trading between R1 and S1 when volume is low"
+      primary: `If price breaks & holds above R1 (${st.pv?.R1?.toFixed(1) || "—"}) → LONG continuation ladder`,
+      primary_target: `R2 (${st.pv?.R2?.toFixed(1) || "—"}) → R3 (${st.pv?.R3?.toFixed(1) || "—"}) → H5 (${st.pv?.H5?.toFixed(1) || "—"})`,
+      contingency: `If price breaks & holds below S1 (${st.pv?.S1?.toFixed(1) || "—"}) → SHORT continuation ladder`,
+      contingency_target: `S2 (${st.pv?.S2?.toFixed(1) || "—"}) → S3 (${st.pv?.S3?.toFixed(1) || "—"}) → L5 (${st.pv?.L5?.toFixed(1) || "—"})`,
+      failure: "Pivot level rejects breakout attempt — price returns inside prior range",
+      no_trade: "Avoid trading between R1 and S1 when volume is low or price is in middle of value"
     }, "neutral", "case_i_pivot_breakout_ladder"],
   ];
 
