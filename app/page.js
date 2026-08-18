@@ -427,7 +427,7 @@ function Scenarios({ st, data }) {
 
   const formatDynamicTarget = (rawTarget) => {
     if (!rawTarget) return "";
-    const p = st.pivots || {};
+    const p = st.pv || {};
     const cur = first15m?.close || st.p?.close || 0;
 
     let targetStr = rawTarget;
@@ -472,35 +472,35 @@ function Scenarios({ st, data }) {
   const enrichedScenarios = {
     case_a_in_range_in_value: {
       primary: "If price breaks VAH and accepts → LONG",
-      primary_target: `VAH (${fmtPrice(st.va?.VAH)}) → R1 (${fmtPrice(st.pivots?.R1)}) / R2 (${fmtPrice(st.pivots?.R2)})`,
+      primary_target: `VAH (${fmtPrice(st.va?.VAH)}) → R1 (${fmtPrice(st.pv?.R1)}) / R2 (${fmtPrice(st.pv?.R2)})`,
       contingency: "If price breaks VAL and accepts → SHORT",
-      contingency_target: `VAL (${fmtPrice(st.va?.VAL)}) → S1 (${fmtPrice(st.pivots?.S1)}) / S2 (${fmtPrice(st.pivots?.S2)}) / S3 (${fmtPrice(st.pivots?.S3)})`,
+      contingency_target: `VAL (${fmtPrice(st.va?.VAL)}) → S1 (${fmtPrice(st.pv?.S1)}) / S2 (${fmtPrice(st.pv?.S2)}) / S3 (${fmtPrice(st.pv?.S3)})`,
       no_trade: `Price remains inside value (${fmtPrice(st.va?.VAL)} - ${fmtPrice(st.va?.VAH)})`,
     },
     case_b_in_range_above_value: {
       primary: "If price accepts above VAH → LONG candidate",
-      primary_target: `R1 (${fmtPrice(st.pivots?.R1)}) / R2 (${fmtPrice(st.pivots?.R2)}) / R3 (${fmtPrice(st.pivots?.R3)})`,
+      primary_target: `R1 (${fmtPrice(st.pv?.R1)}) / R2 (${fmtPrice(st.pv?.R2)}) / R3 (${fmtPrice(st.pv?.R3)})`,
       contingency: "If price returns below VAH → CANCEL bullish thesis, SHORT",
-      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pivots?.P)}) / VAL (${fmtPrice(st.va?.VAL)})`,
+      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pv?.P)}) / VAL (${fmtPrice(st.va?.VAL)})`,
       failure: "VAH acts as strong resistance",
     },
     case_c_in_range_below_value: {
       primary: "If price accepts below VAL → SHORT candidate",
-      primary_target: `S1 (${fmtPrice(st.pivots?.S1)}) / S2 (${fmtPrice(st.pivots?.S2)}) / S3 (${fmtPrice(st.pivots?.S3)})`,
+      primary_target: `S1 (${fmtPrice(st.pv?.S1)}) / S2 (${fmtPrice(st.pv?.S2)}) / S3 (${fmtPrice(st.pv?.S3)})`,
       contingency: "If price reclaims VAL → CANCEL bearish thesis, LONG",
-      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pivots?.P)}) / VAH (${fmtPrice(st.va?.VAH)})`,
+      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pv?.P)}) / VAH (${fmtPrice(st.va?.VAH)})`,
       failure: "VAL acts as strong support",
     },
     case_d_out_above: {
       primary: "If first 15m closes above PDH → Initiative Bullish confirmation, LONG",
-      primary_target: `R2 (${fmtPrice(st.pivots?.R2)}) / R3 (${fmtPrice(st.pivots?.R3)}) / R4 (${fmtPrice(st.pivots?.R4)}) / H5 (${fmtPrice(st.pivots?.H5)})`,
+      primary_target: `R2 (${fmtPrice(st.pv?.R2)}) / R3 (${fmtPrice(st.pv?.R3)}) / R4 (${fmtPrice(st.pv?.R4)}) / H5 (${fmtPrice(st.pv?.H5)})`,
       contingency: "If first 15m closes below PDH → Failed Gap Up, SHORT",
       contingency_target: `PDH (${fmtPrice(st.p?.high)}) / VAH (${fmtPrice(st.va?.VAH)}) / POC (${fmtPrice(st.va?.POC)})`,
       failure: "Gap fill back inside prior range",
     },
     case_e_out_below: {
       primary: "If first 15m closes below PDL → Initiative Bearish confirmation, SHORT",
-      primary_target: `S2 (${fmtPrice(st.pivots?.S2)}) / S3 (${fmtPrice(st.pivots?.S3)}) / S4 (${fmtPrice(st.pivots?.S4)}) / L5 (${fmtPrice(st.pivots?.L5)})`,
+      primary_target: `S2 (${fmtPrice(st.pv?.S2)}) / S3 (${fmtPrice(st.pv?.S3)}) / S4 (${fmtPrice(st.pv?.S4)}) / L5 (${fmtPrice(st.pv?.L5)})`,
       contingency: "If first 15m closes above PDL → Failed Gap Down, LONG",
       contingency_target: `PDL (${fmtPrice(st.p?.low)}) / VAL (${fmtPrice(st.va?.VAL)}) / POC (${fmtPrice(st.va?.POC)})`,
       failure: "Gap fill back inside prior range",
