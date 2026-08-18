@@ -35,3 +35,8 @@ venv/
 api/upstox.json
 api/__pycache__/upstox_client.cpython-314.pyc
 api/upstox.json
+
+
+# Node
+node_modules/
+.next/

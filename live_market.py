@@ -38,7 +38,6 @@ INSTRUMENT_KEYS = pivot_boss.INSTRUMENT_KEYS
 UPSTOX_BASE = pivot_boss.UPSTOX_BASE
 _V3_URL = "https://api.upstox.com/v3"
 _OUTPUT_DIR = pivot_boss._OUTPUT_DIR
-_holidays_cache = pivot_boss._HOLIDAY_CACHE
 
 
 def _resolve_symbol(alias_or_symbol: str) -> str | None:
@@ -276,14 +275,15 @@ def main():
     first_15m = live_data.get("first_15min")
     classification = "PENDING"
 
-    if open_price and existing.get("previous_session"):
+    # Guard: if open_price is None (spot LTP fetch failed), skip classification
+    if open_price is not None and existing.get("previous_session"):
         pdh = existing["previous_session"].get("high", 0)
         pdl = existing["previous_session"].get("low", 0)
         vah = existing.get("value_area", {}).get("VAH", 0)
         val = existing.get("value_area", {}).get("VAL", 0)
-        if open_price > pdh:
+        if open_price >= pdh:
             classification = "OUT_ABOVE"
-        elif open_price < pdl:
+        elif open_price <= pdl:
             classification = "OUT_BELOW"
         elif open_price > vah:
             classification = "ABOVE_VALUE"
@@ -296,28 +296,30 @@ def main():
     first_15m_candle = None
     if first_15m and "status" not in first_15m:
         _o = first_15m.get("open"); _h = first_15m.get("high"); _l = first_15m.get("low"); _c = first_15m.get("close")
-        _vah = existing.get("value_area", {}).get("VAH", 0) if existing else 0
-        _val = existing.get("value_area", {}).get("VAL", 0) if existing else 0
-        # Candle type: BULLISH (close > open), BEARISH (close < open), DOJI (real body < 10% of range)
-        _body = abs(_c - _o)
-        _rng = _h - _l
-        if _rng == 0 or (_body / _rng) < 0.10:
-            _ctype = "DOJI"
-        elif _c > _o: _ctype = "BULLISH"
-        else: _ctype = "BEARISH"
-        # Acceptance: where close lands relative to value area
-        if _c > _vah: _acc = "ABOVE_VALUE"
-        elif _c < _val: _acc = "BELOW_VALUE"
-        else: _acc = "INSIDE_VALUE"
-        first_15m_candle = {
-            "open": _o,
-            "high": _h,
-            "low": _l,
-            "close": _c,
-            "volume": first_15m.get("volume", 0),
-            "type": _ctype,
-            "acceptance": _acc,
-        }
+        # Guard: skip if any OHLC value is None (spot LTP fallback failed)
+        if _o is not None and _h is not None and _l is not None and _c is not None:
+            _vah = existing.get("value_area", {}).get("VAH", 0) if existing else 0
+            _val = existing.get("value_area", {}).get("VAL", 0) if existing else 0
+            # Candle type: BULLISH (close > open), BEARISH (close < open), DOJI (real body < 10% of range)
+            _body = abs(_c - _o)
+            _rng = _h - _l
+            if _rng == 0 or (_body / _rng) < 0.10:
+                _ctype = "DOJI"
+            elif _c > _o: _ctype = "BULLISH"
+            else: _ctype = "BEARISH"
+            # Acceptance: where close lands relative to value area
+            if _c > _vah: _acc = "ABOVE_VALUE"
+            elif _c < _val: _acc = "BELOW_VALUE"
+            else: _acc = "INSIDE_VALUE"
+            first_15m_candle = {
+                "open": _o,
+                "high": _h,
+                "low": _l,
+                "close": _c,
+                "volume": first_15m.get("volume", 0),
+                "type": _ctype,
+                "acceptance": _acc,
+            }
     elif first_15m and first_15m.get("status") == "PENDING_CANDLES":
         first_15m_candle = None  # pre-market — not yet available
 

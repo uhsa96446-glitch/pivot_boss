@@ -428,80 +428,82 @@ function Scenarios({ st, data }) {
   const formatDynamicTarget = (rawTarget) => {
     if (!rawTarget) return "";
     const p = st.pivots || {};
-    const cur = first15m?.close || st.p?.close || 24306.05;
+    const cur = first15m?.close || st.p?.close || 0;
 
     let targetStr = rawTarget;
 
     // Dynamic S1 check: If current price has already breached or tested S1, advance target to S2 & S3
     if (targetStr.includes("S1") && p.S1) {
       if (cur <= p.S1) {
-        targetStr = targetStr.replace("S1", `S2 (${p.S2?.toFixed(1)}) / S3 (${p.S3?.toFixed(1)})`);
+        targetStr = targetStr.replaceAll("S1", `S2 (${p.S2?.toFixed(1)}) / S3 (${p.S3?.toFixed(1)})`);
       } else {
-        targetStr = targetStr.replace("S1", `S1 (${p.S1?.toFixed(1)}) / S2 (${p.S2?.toFixed(1)})`);
+        targetStr = targetStr.replaceAll("S1", `S1 (${p.S1?.toFixed(1)}) / S2 (${p.S2?.toFixed(1)})`);
       }
     }
 
     // Dynamic R1 check: If current price has already breached R1, advance target to R2 & R3
     if (targetStr.includes("R1") && p.R1) {
       if (cur >= p.R1) {
-        targetStr = targetStr.replace("R1", `R2 (${p.R2?.toFixed(1)}) / R3 (${p.R3?.toFixed(1)})`);
+        targetStr = targetStr.replaceAll("R1", `R2 (${p.R2?.toFixed(1)}) / R3 (${p.R3?.toFixed(1)})`);
       } else {
-        targetStr = targetStr.replace("R1", `R1 (${p.R1?.toFixed(1)}) / R2 (${p.R2?.toFixed(1)})`);
+        targetStr = targetStr.replaceAll("R1", `R1 (${p.R1?.toFixed(1)}) / R2 (${p.R2?.toFixed(1)})`);
       }
     }
 
     // Append level prices if present
     if (targetStr.includes("POC") && !targetStr.includes("POC (") && st.va?.POC) {
-      targetStr = targetStr.replace("POC", `POC (${st.va.POC.toFixed(1)})`);
+      targetStr = targetStr.replaceAll("POC", `POC (${st.va.POC.toFixed(1)})`);
     }
     if (targetStr.includes("CPR") && !targetStr.includes("CPR (") && p.P) {
-      targetStr = targetStr.replace("CPR", `CPR (${p.P.toFixed(1)})`);
+      targetStr = targetStr.replaceAll("CPR", `CPR (${p.P.toFixed(1)})`);
     }
     if (targetStr.includes("VAH") && !targetStr.includes("VAH (") && st.va?.VAH) {
-      targetStr = targetStr.replace("VAH", `VAH (${st.va.VAH.toFixed(1)})`);
+      targetStr = targetStr.replaceAll("VAH", `VAH (${st.va.VAH.toFixed(1)})`);
     }
     if (targetStr.includes("VAL") && !targetStr.includes("VAL (") && st.va?.VAL) {
-      targetStr = targetStr.replace("VAL", `VAL (${st.va.VAL.toFixed(1)})`);
+      targetStr = targetStr.replaceAll("VAL", `VAL (${st.va.VAL.toFixed(1)})`);
     }
 
     return targetStr;
   };
 
+  const fmtPrice = (val) => (typeof val === "number" ? val.toFixed(1) : "");
+
   const enrichedScenarios = {
     case_a_in_range_in_value: {
       primary: "If price breaks VAH and accepts → LONG",
-      primary_target: `VAH (${st.va?.VAH?.toFixed(1) || 24402}) → R1 (${st.pivots?.R1?.toFixed(1) || 24415.2}) / R2 (${st.pivots?.R2?.toFixed(1) || 24464.4})`,
+      primary_target: `VAH (${fmtPrice(st.va?.VAH)}) → R1 (${fmtPrice(st.pivots?.R1)}) / R2 (${fmtPrice(st.pivots?.R2)})`,
       contingency: "If price breaks VAL and accepts → SHORT",
-      contingency_target: `VAL (${st.va?.VAL?.toFixed(1) || 24326}) → S1 (${st.pivots?.S1?.toFixed(1) || 24306.8}) → S2 (${st.pivots?.S2?.toFixed(1) || 24247.6}) / S3 (${st.pivots?.S3?.toFixed(1) || 24198.4})`,
-      no_trade: `Price remains inside value (${st.va?.VAL?.toFixed(1) || 24326} - ${st.va?.VAH?.toFixed(1) || 24402})`,
+      contingency_target: `VAL (${fmtPrice(st.va?.VAL)}) → S1 (${fmtPrice(st.pivots?.S1)}) / S2 (${fmtPrice(st.pivots?.S2)}) / S3 (${fmtPrice(st.pivots?.S3)})`,
+      no_trade: `Price remains inside value (${fmtPrice(st.va?.VAL)} - ${fmtPrice(st.va?.VAH)})`,
     },
     case_b_in_range_above_value: {
       primary: "If price accepts above VAH → LONG candidate",
-      primary_target: `R1 (${st.pivots?.R1?.toFixed(1) || 24415.2}) → R2 (${st.pivots?.R2?.toFixed(1) || 24464.4}) / R3 (${st.pivots?.R3?.toFixed(1) || 24523.6})`,
+      primary_target: `R1 (${fmtPrice(st.pivots?.R1)}) / R2 (${fmtPrice(st.pivots?.R2)}) / R3 (${fmtPrice(st.pivots?.R3)})`,
       contingency: "If price returns below VAH → CANCEL bullish thesis, SHORT",
-      contingency_target: `POC (${st.va?.POC?.toFixed(1) || 24372}) → CPR (${st.pivots?.P?.toFixed(1) || 24356}) → VAL (${st.va?.VAL?.toFixed(1) || 24326})`,
+      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pivots?.P)}) / VAL (${fmtPrice(st.va?.VAL)})`,
       failure: "VAH acts as strong resistance",
     },
     case_c_in_range_below_value: {
       primary: "If price accepts below VAL → SHORT candidate",
-      primary_target: `S1 (${st.pivots?.S1?.toFixed(1) || 24306.8}) → S2 (${st.pivots?.S2?.toFixed(1) || 24247.6}) / S3 (${st.pivots?.S3?.toFixed(1) || 24198.4})`,
+      primary_target: `S1 (${fmtPrice(st.pivots?.S1)}) / S2 (${fmtPrice(st.pivots?.S2)}) / S3 (${fmtPrice(st.pivots?.S3)})`,
       contingency: "If price reclaims VAL → CANCEL bearish thesis, LONG",
-      contingency_target: `POC (${st.va?.POC?.toFixed(1) || 24372}) → CPR (${st.pivots?.P?.toFixed(1) || 24356}) → VAH (${st.va?.VAH?.toFixed(1) || 24402})`,
+      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pivots?.P)}) / VAH (${fmtPrice(st.va?.VAH)})`,
       failure: "VAL acts as strong support",
     },
     case_d_out_above: {
       primary: "If first 15m closes above PDH → Initiative Bullish confirmation, LONG",
-      primary_target: `R2 (${st.pivots?.R2?.toFixed(1) || 24464.4}) → R3 (${st.pivots?.R3?.toFixed(1) || 24523.6}) / R4 (${st.pivots?.R4?.toFixed(1) || 24572.8})`,
+      primary_target: `R2 (${fmtPrice(st.pivots?.R2)}) / R3 (${fmtPrice(st.pivots?.R3)}) / R4 (${fmtPrice(st.pivots?.R4)}) / H5 (${fmtPrice(st.pivots?.H5)})`,
       contingency: "If first 15m closes below PDH → Failed Gap Up, SHORT",
-      contingency_target: `PDH (${st.p?.high?.toFixed(1) || 24405.2}) → VAH (${st.va?.VAH?.toFixed(1) || 24402}) → POC (${st.va?.POC?.toFixed(1) || 24372})`,
-      failure: "Gap fill back inside prior day range",
+      contingency_target: `PDH (${fmtPrice(st.p?.high)}) / VAH (${fmtPrice(st.va?.VAH)}) / POC (${fmtPrice(st.va?.POC)})`,
+      failure: "Gap fill back inside prior range",
     },
     case_e_out_below: {
       primary: "If first 15m closes below PDL → Initiative Bearish confirmation, SHORT",
-      primary_target: `S2 (${st.pivots?.S2?.toFixed(1) || 24247.6}) → S3 (${st.pivots?.S3?.toFixed(1) || 24198.4}) / S4 (${st.pivots?.S4?.toFixed(1) || 24149.2})`,
+      primary_target: `S2 (${fmtPrice(st.pivots?.S2)}) / S3 (${fmtPrice(st.pivots?.S3)}) / S4 (${fmtPrice(st.pivots?.S4)}) / L5 (${fmtPrice(st.pivots?.L5)})`,
       contingency: "If first 15m closes above PDL → Failed Gap Down, LONG",
-      contingency_target: `PDL (${st.p?.low?.toFixed(1) || 24296.8}) → VAL (${st.va?.VAL?.toFixed(1) || 24326}) → POC (${st.va?.POC?.toFixed(1) || 24372})`,
-      failure: "Gap fill back inside prior day range",
+      contingency_target: `PDL (${fmtPrice(st.p?.low)}) / VAL (${fmtPrice(st.va?.VAL)}) / POC (${fmtPrice(st.va?.POC)})`,
+      failure: "Gap fill back inside prior range",
     },
   };
 
@@ -612,7 +614,7 @@ function Scenarios({ st, data }) {
                     <div className="scenario-cond">
                       <span className="eyebrow">OPEN CONDITION</span>
                       <div className="cond-explain">
-                        {conditionExplanations[o.condition.trim()] || o.condition}
+                        {conditionExplanations[o.condition?.trim()] || o.condition}
                       </div>
                     </div>
                   )}
@@ -931,13 +933,10 @@ export default function Page() {
   const [tab, setTab] = useState("overview");
 
   useEffect(() => {
-    fetch("/data/NIFTY.json")
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => { });
+    const controller = new AbortController();
 
     const fetchLive = () => {
-      fetch("/api/nifty")
+      fetch("/api/nifty", { signal: controller.signal })
         .then((r) => r.json())
         .then((res) => {
           if (res.success) {
@@ -949,8 +948,9 @@ export default function Page() {
           }
           setLivePending(false);
         })
-        .catch(() => {
-          // Network or timeout error
+        .catch((err) => {
+          // Ignore abort errors, handle real network/timeout errors
+          if (err.name === "AbortError") return;
           setLiveError(true);
           setLivePending(false);
         });
@@ -981,7 +981,7 @@ export default function Page() {
     }
     // else: already fetched once above, no polling outside market hours
 
-    return () => { if (interval) clearInterval(interval); };
+    return () => { if (interval) clearInterval(interval); controller.abort(); };
   }, []);
 
   const st = useMemo(() => (data ? buildState(data) : null), [data]);
@@ -1027,7 +1027,7 @@ export default function Page() {
           </div>
         </div>
         <div className="topmeta">
-          <i /> {topbarStatus} <span>{sessionTag}</span>
+          <i aria-label="Live indicator" role="img" /> {topbarStatus} <span>{sessionTag}</span>
         </div>
       </header>
 
@@ -1066,8 +1066,22 @@ export default function Page() {
               aria-selected={tab === x}
               aria-controls={`tabpanel-${x}`}
               id={`tab-${x}`}
+              tabIndex={tab === x ? 0 : -1}
               className={tab === x ? "active" : ""}
               onClick={() => setTab(x)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                  const idx = (["overview", "levels", "scenarios", "framework"].indexOf(x) + 1) % 4;
+                  const next = ["overview", "levels", "scenarios", "framework"][idx];
+                  setTab(next);
+                  document.getElementById(`tab-${next}`)?.focus();
+                } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                  const idx = (["overview", "levels", "scenarios", "framework"].indexOf(x) - 1 + 4) % 4;
+                  const prev = ["overview", "levels", "scenarios", "framework"][idx];
+                  setTab(prev);
+                  document.getElementById(`tab-${prev}`)?.focus();
+                }
+              }}
               key={x}
             >
               {x}

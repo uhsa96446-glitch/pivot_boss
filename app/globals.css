@@ -154,11 +154,11 @@ button {
 }
 
 .green-txt {
-  color: #10b981;
+  color: var(--green);
 }
 
 .red-txt {
-  color: #f43f5e;
+  color: var(--red);
 }
 
 .live-change-tag {
@@ -168,13 +168,13 @@ button {
 }
 
 .green-bg {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+  background: var(--green-glow);
+  color: var(--green);
 }
 
 .red-bg {
-  background: rgba(244, 63, 94, 0.15);
-  color: #f87171;
+  background: var(--red-glow);
+  color: var(--red);
 }
 
 .live-ohlc-grid {
