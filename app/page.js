@@ -981,6 +981,541 @@ function FrameworkTab({ st }) {
           )}
         </div>
       </div>
+
+      {/* ── Live Decision Tree ── */}
+      <div className="intro sub">
+        <div>
+          <span className="eyebrow">LIVE DECISION TREE</span>
+          <h2>Complete market logic flow</h2>
+        </div>
+      </div>
+
+      <Card>
+        <Title e="PLAYBOOK §47" t="Decision tree" r={<Badge tone="neutral">SYSTEM</Badge>} />
+        <div className="decision-tree">
+          <div className="tree-node">
+            <span className="tree-step">1</span>
+            <b>Calculate CPR / Pivots / Camarilla / Value</b>
+            <p>Floor pivots (P·R1·S1), CPR (TC·BC), Camarilla (H1-L5), Value Area (VAH·POC·VAL)</p>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">2</span>
+            <b>Determine widths</b>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Narrow CPR + Narrow VA + Narrow Cam</span>
+              <span className="tree-sub-label">TREND candidate</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Wide CPR or Wide VA or Wide Cam</span>
+              <span className="tree-sub-label">RANGE candidate</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Normal / mixed widths</span>
+              <span className="tree-sub-label">NEUTRAL / SIDEWAYS</span>
+            </div>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">3</span>
+            <b>Two-day CPR relationship</b>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Higher</span>
+              <span className="tree-sub-label">HIGHER_VALUE</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Overlap Higher</span>
+              <span className="tree-sub-label">OVERLAPPING_HIGHER</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Inside</span>
+              <span className="tree-sub-label">INSIDE (compression)</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Lower</span>
+              <span className="tree-sub-label">LOWER_VALUE</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Overlap Lower</span>
+              <span className="tree-sub-label">OVERLAPPING_LOWER</span>
+            </div>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">4</span>
+            <b>09:15 OPEN — classify location</b>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Above PDH (H4/H5)</span>
+              <span className="tree-sub-label">Gap Up</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Below PDL (L4/L5)</span>
+              <span className="tree-sub-label">Gap Down</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">In Range + Above VAH</span>
+              <span className="tree-sub-label">In Range / Above Value</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">In Range + Below VAL</span>
+              <span className="tree-sub-label">In Range / Below Value</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">In Range + VAL≤O≤VAH</span>
+              <span className="tree-sub-label">In Range / In Value</span>
+            </div>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">5</span>
+            <b>First 15m confirmation</b>
+            <p>Gap up accepted if 15m close > PDH → Initiative Long. Gap up rejected if 15m closes back inside range → Reversal.</p>
+            <p>Gap down accepted if 15m close < PDL → Initiative Short. Gap down rejected if 15m closes back inside range → Reversal.</p>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">6</span>
+            <b>Is price at important location?</b>
+            <div className="tree-locations">
+              <span>VAH / VAL / POC · CPR · H3 / L3 · H4 / L4 · Floor Pivot · Hot Zone</span>
+            </div>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">7</span>
+            <b>Trigger detected?</b>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Wick Reversal</span>
+              <span className="tree-sub-label">Rejection tail at extreme</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Outside Reversal</span>
+              <span className="tree-sub-label">Failed range expansion</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Extreme Reversal</span>
+              <span className="tree-sub-label">Exhaustion far from value</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Doji + Confirmation</span>
+              <span className="tree-sub-label">Indecision at confluence</span>
+            </div>
+            <div className="tree-sub">
+              <span className="tree-sub-item">Breakout Acceptance</span>
+              <span className="tree-sub-label">Sustained move beyond structure</span>
+            </div>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">8</span>
+            <b>ENTER</b>
+            <p>Execute with stop below/above trigger candle. Targets: next structural pivot (R2/R3, S2/S3, H5/L5).</p>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">9</span>
+            <b>INVALIDATION</b>
+            <p>Cut lose if: gap fills back inside range, CPR zone rejects, or price closes beyond opposing extreme.</p>
+          </div>
+          <div className="tree-node">
+            <span className="tree-step">10</span>
+            <b>CONTINGENCY</b>
+            <p>If primary thesis fails, switch to counter-plan: fade the failed breakout toward POC/CPR.</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Macro × Micro Regime Matrix ── */}
+      <div className="intro sub">
+        <div>
+          <span className="eyebrow">REGIME MATRIX</span>
+          <h2>Macro × Micro combination engine</h2>
+        </div>
+        <span className="muted">§4, §5, §10, §11, §45 — all 20 combinations explicitly handled</span>
+      </div>
+
+      <Card>
+        <Title e="PLAYBOOK §45" t="Conflict resolution matrix" r={<Badge tone="neutral">20 COMBOS</Badge>} />
+        <div className="regime-matrix">
+          <div className="matrix-header">
+            <span>MACRO (2-Day CPR)</span>
+            <span>MICRO (Opening Acceptance)</span>
+            <span>REGIME OUTPUT</span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell green">Bullish</span>
+            <span className="matrix-cell">Gap Up Accepted</span>
+            <span className="matrix-cell">
+              <b className="green">STRONG BULLISH (INITIATIVE)</b>
+              <small>MAX BULLISH. Add on VWAP/PDH pullbacks. Targets: H4 → H5.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell green">Bullish</span>
+            <span className="matrix-cell">Gap Up Rejected</span>
+            <span className="matrix-cell">
+              <b className="green">SIDEWAYS TO BULLISH</b>
+              <small>Gap fill likely short-lived. Buy VAH/PDH support dips. Targets: POC → VAH.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell green">Bullish</span>
+            <span className="matrix-cell">Gap Down Accepted</span>
+            <span className="matrix-cell">
+              <b className="red">STRONG BEARISH (INITIATIVE)</b>
+              <small>Micro overrides macro. Trust price. Sell carefully. Targets: L3/VAL.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell green">Bullish</span>
+            <span className="matrix-cell">Gap Down Rejected</span>
+            <span className="matrix-cell">
+              <b className="green">SIDEWAYS TO BULLISH</b>
+              <small>Both aligned. Buy PDL/VAL dip. Targets: POC → VAH.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell red">Bearish</span>
+            <span className="matrix-cell">Gap Up Accepted</span>
+            <span className="matrix-cell">
+              <b className="green">STRONG BULLISH (INITIATIVE)</b>
+              <small>Micro overrides macro. §45 conflict: buy carefully. Targets: H3/VAH.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell red">Bearish</span>
+            <span className="matrix-cell">Gap Up Rejected</span>
+            <span className="matrix-cell">
+              <b className="red">SIDEWAYS TO BEARISH</b>
+              <small>Macro & micro aligned. Sell CPR/VAH. Targets: POC → VAL → S1.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell red">Bearish</span>
+            <span className="matrix-cell">Gap Down Accepted</span>
+            <span className="matrix-cell">
+              <b className="red">STRONG BEARISH (INITIATIVE)</b>
+              <small>MAX BEARISH. Sell VWAP/PDL rallies. Targets: L4 → L5 → S2.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell red">Bearish</span>
+            <span className="matrix-cell">Gap Down Rejected</span>
+            <span className="matrix-cell">
+              <b className="green">SIDEWAYS TO BULLISH</b>
+              <small>§45 conflict: gap-fill only. Targets: POC max.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell yellow">Compression</span>
+            <span className="matrix-cell">Gap Up Accepted</span>
+            <span className="matrix-cell">
+              <b className="green">STRONG BULLISH (INITIATIVE)</b>
+              <small>Compression breakout. Targets: H4 → H5. Trailing stops only.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell yellow">Compression</span>
+            <span className="matrix-cell">Gap Up Rejected</span>
+            <span className="matrix-cell">
+              <b className="yellow">SIDEWAYS / BALANCED</b>
+              <small>Fade extremes only. Range-bound between 2-day high/low.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell yellow">Compression</span>
+            <span className="matrix-cell">Gap Down Accepted</span>
+            <span className="matrix-cell">
+              <b className="red">STRONG BEARISH (INITIATIVE)</b>
+              <small>Compression breakdown. Targets: L4 → L5. Trailing stops only.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell yellow">Compression</span>
+            <span className="matrix-cell">Gap Down Rejected</span>
+            <span className="matrix-cell">
+              <b className="yellow">SIDEWAYS / BALANCED</b>
+              <small>Fade 2-day boundaries only.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell neutral">Neutral</span>
+            <span className="matrix-cell">Gap Up Accepted</span>
+            <span className="matrix-cell">
+              <b className="green">STRONG BULLISH (INITIATIVE)</b>
+              <small>Buy VWAP/PDH pullbacks. Targets: H3 → H4 → R1.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell neutral">Neutral</span>
+            <span className="matrix-cell">Gap Up Rejected</span>
+            <span className="matrix-cell">
+              <b className="red">SIDEWAYS TO BEARISH</b>
+              <small>Sell CPR/VAH. Gap fill in progress.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell neutral">Neutral</span>
+            <span className="matrix-cell">Gap Down Accepted</span>
+            <span className="matrix-cell">
+              <b className="red">STRONG BEARISH (INITIATIVE)</b>
+              <small>Sell VWAP/PDL rallies. Targets: L3 → L4 → S1.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell neutral">Neutral</span>
+            <span className="matrix-cell">Gap Down Rejected</span>
+            <span className="matrix-cell">
+              <b className="green">SIDEWAYS TO BULLISH</b>
+              <small>Buy PDL/VAL. In-range recovery.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell green">Bullish + In-Range + Narrow</span>
+            <span className="matrix-cell neutral">No gap</span>
+            <span className="matrix-cell">
+              <b className="green">SIDEWAYS TO BULLISH</b>
+              <small>Trend day if VAH breaks. Buy CPR/VAL pullbacks.</small>
+            </span>
+          </div>
+
+          <div className="matrix-row">
+            <span className="matrix-cell red">Bearish + In-Range + Narrow</span>
+            <span className="matrix-cell neutral">No gap</span>
+            <span className="matrix-cell">
+              <b className="red">SIDEWAYS TO BEARISH</b>
+              <small>Trend day if VAL breaks. Sell CPR/VAH rally.</small>
+            </span>
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Opening Cases A-E ── */}
+      <div className="intro sub">
+        <div>
+          <span className="eyebrow">OPENING CASES</span>
+          <h2>Classification A through E</h2>
+        </div>
+        <span className="muted">§7-11 — classified by open vs Range and Value boundaries</span>
+      </div>
+
+      <div className="grid two">
+        <Card>
+          <Title e="CASE A" t="In Range + In Value" r={<Badge tone="neutral">NEUTRAL</Badge>} />
+          <div className="scenario-cond">
+            <span className="eyebrow">CONDITION</span>
+            <div className="cond-explain">PDL ≤ O ≤ PDH AND VAL ≤ O ≤ VAH</div>
+          </div>
+          <div className="kv">
+            <span>PRIMARY PLAN</span>
+            <b>If price breaks VAH and accepts → LONG</b>
+          </div>
+          <div className="kv">
+            <span>CONTINGENCY</span>
+            <b>If price breaks VAL and accepts → SHORT</b>
+          </div>
+          <div className="kv">
+            <span>NO-TRADE</span>
+            <b>Price remains inside value</b>
+          </div>
+        </Card>
+
+        <Card>
+          <Title e="CASE B" t="In Range + Above Value" r={<Badge tone="green">BULLISH</Badge>} />
+          <div className="scenario-cond">
+            <span className="eyebrow">CONDITION</span>
+            <div className="cond-explain">PDL ≤ O ≤ PDH AND O > VAH</div>
+          </div>
+          <div className="kv">
+            <span>PRIMARY PLAN</span>
+            <b>If price accepts above VAH → LONG candidate</b>
+          </div>
+          <div className="kv">
+            <span>CONTINGENCY</span>
+            <b>If price returns below VAH → Cancel bullish thesis</b>
+          </div>
+          <div className="kv">
+            <span>FAILURE MODE</span>
+            <b>VAH acts as resistance</b>
+          </div>
+        </Card>
+
+        <Card>
+          <Title e="CASE C" t="In Range + Below Value" r={<Badge tone="red">BEARISH</Badge>} />
+          <div className="scenario-cond">
+            <span className="eyebrow">CONDITION</span>
+            <div className="cond-explain">PDL ≤ O ≤ PDH AND O < VAL</div>
+          </div>
+          <div className="kv">
+            <span>PRIMARY PLAN</span>
+            <b>If price accepts below VAL → SHORT candidate</b>
+          </div>
+          <div className="kv">
+            <span>CONTINGENCY</span>
+            <b>If price reclaims VAL → Cancel bearish thesis</b>
+          </div>
+          <div className="kv">
+            <span>FAILURE MODE</span>
+            <b>VAL acts as support</b>
+          </div>
+        </Card>
+
+        <Card>
+          <Title e="CASE D" t="Out of Range Above" r={<Badge tone="green">BULLISH</Badge>} />
+          <div className="scenario-cond">
+            <span className="eyebrow">CONDITION</span>
+            <div className="cond-explain">O > PDH — Gap Up</div>
+          </div>
+          <div className="kv">
+            <span>PRIMARY PLAN</span>
+            <b>First 15m closes above PDH → Initiative Bullish Breakout</b>
+          </div>
+          <div className="kv">
+            <span>CONTINGENCY</span>
+            <b>First 15m closes back below PDH → Failed Gap Fill SHORT</b>
+          </div>
+          <div className="kv">
+            <span>FAILURE MODE</span>
+            <b>Gap fill back inside prior range</b>
+          </div>
+        </Card>
+
+        <Card>
+          <Title e="CASE E" t="Out of Range Below" r={<Badge tone="red">BEARISH</Badge>} />
+          <div className="scenario-cond">
+            <span className="eyebrow">CONDITION</span>
+            <div className="cond-explain">O < PDL — Gap Down</div>
+          </div>
+          <div className="kv">
+            <span>PRIMARY PLAN</span>
+            <b>First 15m closes below PDL → Initiative Bearish Breakdown</b>
+          </div>
+          <div className="kv">
+            <span>CONTINGENCY</span>
+            <b>First 15m closes back above PDL → Failed Gap Fill LONG</b>
+          </div>
+          <div className="kv">
+            <span>FAILURE MODE</span>
+            <b>Gap fill back inside prior range</b>
+          </div>
+        </Card>
+      </div>
+
+      {/* ── Trigger Levels ── */}
+      <div className="intro sub">
+        <div>
+          <span className="eyebrow">TRIGGER LEVELS</span>
+          <h2>Entry points by setup type</h2>
+        </div>
+        <span className="muted">§14-17 — responsive vs initiative classification</span>
+      </div>
+
+      <div className="grid two">
+        <Card>
+          <div className="cardhead-trigger green">
+            <span>REVERSAL LONGS</span>
+            <small>RESPONSIVE</small>
+          </div>
+          {[
+            ["POC rejection", "POC", "H3"],
+            ["L3 rebounds (bullish)", "L3", "H3"],
+            ["VAL bounce", "VAL", "POC"],
+            ["CPR support in uptrend", "CPR P", "H3"],
+          ].map(([desc, level, target]) => (
+            <div className="trigger-item-enhanced" key={desc}>
+              <b>{level}</b>
+              <span>{desc}</span>
+              <em>→ {target}</em>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="cardhead-trigger red">
+            <span>BREAKDOWN SHORTS</span>
+            <small>INITIATIVE</small>
+          </div>
+          {[
+            ["S1 break", "S1", "S2"],
+            ["L4 breakdown", "L4", "L5"],
+            ["PDL break", "PDL", "S2"],
+            ["VAL break (accepted)", "VAL", "S1"],
+          ].map(([desc, level, target]) => (
+            <div className="trigger-item-enhanced" key={desc}>
+              <b>{level}</b>
+              <span>{desc}</span>
+              <em>→ {target}</em>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="cardhead-trigger green">
+            <span>BREAKOUT LONGS</span>
+            <small>INITIATIVE</small>
+          </div>
+          {[
+            ["R1 break", "R1", "R2"],
+            ["H4 breakout", "H4", "H5"],
+            ["PDH break", "PDH", "R2"],
+            ["VAH break (accepted)", "VAH", "R1"],
+          ].map(([desc, level, target]) => (
+            <div className="trigger-item-enhanced" key={desc}>
+              <b>{level}</b>
+              <span>{desc}</span>
+              <em>→ {target}</em>
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <div className="cardhead-trigger red">
+            <span>REVERSAL SHORTS</span>
+            <small>RESPONSIVE</small>
+          </div>
+          {[
+            ["POC rejection", "POC", "L3"],
+            ["H3 rejection (bearish)", "H3", "L3"],
+            ["VAH rejection", "VAH", "POC"],
+            ["CPR resistance in downtrend", "CPR P", "L3"],
+          ].map(([desc, level, target]) => (
+            <div className="trigger-item-enhanced" key={desc}>
+              <b>{level}</b>
+              <span>{desc}</span>
+              <em>→ {target}</em>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      {/* ── No-Trade Rules ── */}
+      <Card>
+        <Title e="PLAYBOOK §48" t="No-trade rules" r={<Badge tone="red">STOP</Badge>} />
+        <div className="rules">
+          {[
+            "No trade if price in middle of value with no directional acceptance",
+            "No continuation trade if forecast=trend but no breakout occurs",
+            "No trade if forecast=range but price is in the middle",
+            "No continuation if breakout occurs but immediately fails",
+            "Wait if reversal level touched but no reversal confirmation",
+            "No trade if primary and contingency plans are both invalid",
+          ].map((x, i) => (
+            <div key={i}>
+              <i>×</i>
+              <span>{x}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
