@@ -66,6 +66,10 @@ function Action({ st }) {
           <span>BIAS</span>
           <b>{st.day.bias || "—"}</b>
         </div>
+        <div>
+          <span>15M</span>
+          <b className={st.confirmation === "CONFIRMED" ? "green-txt" : st.confirmation === "REJECTED" ? "red-txt" : st.confirmation === "NEUTRAL" ? "yellow-txt" : ""}>{st.confirmation || "PENDING"}</b>
+        </div>
       </div>
       <div className="beginner">
         <b>Beginner rule</b>

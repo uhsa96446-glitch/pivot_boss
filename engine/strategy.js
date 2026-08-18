@@ -12,6 +12,22 @@ export function buildState(data) {
     const prevClose = p.close || 0;
     const openClass = data.opening_classification || "PENDING";
 
+    // First-15m confirmation (playbook §13, §47)
+    const candleType = first15m?.type || null;      // BULLISH | BEARISH | DOJI
+    const acceptance = first15m?.acceptance || null; // INSIDE_VALUE | ABOVE_VALUE | BELOW_VALUE
+    let confirmation = "PENDING";
+    if (first15m && candleType && acceptance) {
+      if ((candleType === "BULLISH" && acceptance === "ABOVE_VALUE") ||
+          (candleType === "BEARISH" && acceptance === "BELOW_VALUE")) {
+        confirmation = "CONFIRMED";
+      } else if ((candleType === "BEARISH" && acceptance === "ABOVE_VALUE") ||
+                 (candleType === "BULLISH" && acceptance === "BELOW_VALUE")) {
+        confirmation = "REJECTED";
+      } else {
+        confirmation = "NEUTRAL";
+      }
+    }
+
     const inValue = (close >= va.VAL && close <= va.VAH) || openClass === "IN_VALUE";
     const aboveValue = close > va.VAH || openClass === "ABOVE_VALUE" || openClass === "OUT_ABOVE";
     const belowValue = close < va.VAL || openClass === "BELOW_VALUE" || openClass === "OUT_BELOW";
@@ -30,24 +46,38 @@ export function buildState(data) {
         tone = "yellow",
         headline = "Wait for price to reach a decision area.";
 
-    if (belowValue) {
+    // Confirmed rejection flips the bias to return-to-value
+    const rejectedAbove = confirmation === "REJECTED" && aboveValue;
+    const rejectedBelow = confirmation === "REJECTED" && belowValue;
+    const confirmedAbove = confirmation === "CONFIRMED" && aboveValue;
+    const confirmedBelow = confirmation === "CONFIRMED" && belowValue;
+
+    if (rejectedAbove || rejectedBelow) {
+        action = "WAIT — RETURN TO VALUE";
+        tone = "yellow";
+        headline = `First 15m rejected ${rejectedAbove ? `above VAH (${va.VAH})` : `below VAL (${va.VAL})`} — reversal candidate. Look for return to POC/CPR.`;
+    } else if (confirmedBelow || belowValue) {
         action = "LOOK FOR SHORT";
         tone = "red";
-        headline = `Price (${close}) accepted below VAL (${va.VAL}) — Initiative Bearish. Look for short entries toward S1/S2.`;
-    } else if (aboveValue) {
+        headline = `Price (${close}) below VAL (${va.VAL}) — ${confirmedBelow ? "Confirmed " : "Accepted "}Initiative Bearish. Look for short entries toward S1/S2.`;
+    } else if (confirmedAbove || aboveValue) {
         action = "LOOK FOR LONG";
         tone = "green";
-        headline = `Price (${close}) accepted above VAH (${va.VAH}) — Initiative Bullish. Look for long entries toward R1/R2.`;
+        headline = `Price (${close}) above VAH (${va.VAH}) — ${confirmedAbove ? "Confirmed " : "Accepted "}Initiative Bullish. Look for long entries toward R1/R2.`;
     } else {
-        action = "WAIT (IN VALUE)";
+        action = confirmation === "NEUTRAL" ? "WAIT — AWAIT CONFIRMATION" : "WAIT (IN VALUE)";
         tone = "yellow";
-        headline = `Price (${close}) is inside value area (${va.VAL} - ${va.VAH}) — avoid trading the middle. Watch VAH & VAL extremes.`;
+        headline = confirmation === "NEUTRAL"
+            ? `First 15m candle is ${candleType || "NEUTRAL"} inside value — wait for acceptance/rejection at an extreme.`
+            : `Price (${close}) is inside value area (${va.VAL} - ${va.VAH}) — avoid trading the middle. Watch VAH & VAL extremes.`;
     }
 
     return {
         p: { ...p, close },
         pv,
+        first15m,
         prevClose,
+        confirmation,
         va,
         pred,
         s,
