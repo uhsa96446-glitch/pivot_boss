@@ -405,12 +405,12 @@ function Scenarios({ st, data, ltp }) {
   const isGapUp = openClass === "OUT_ABOVE" || openClass === "OUTSIDE_ABOVE";
   const isGapDown = openClass === "OUT_BELOW" || openClass === "OUTSIDE_BELOW";
   const candleData = ib || first15m;
-  const is15mRejected = candleData?.acceptance === "REJECTED" || candleData?.acceptance === "INSIDE_VALUE";
+  const is15mRejected = Boolean(candleData?.acceptance === "REJECTED" || candleData?.acceptance === "INSIDE_VALUE");
 
   // Determine CPR Pullback candidates
   const isHigherValue = st.twoDayRel === "HIGHER_VALUE" || st.twoDayRel === "OVERLAPPING_HIGHER";
   const isLowerValue = st.twoDayRel === "LOWER_VALUE" || st.twoDayRel === "OVERLAPPING_LOWER";
-  const isPullbackToCPR = candleData && (candleData.low <= (st.pv?.CPR_TOP || 0) && candleData.high >= (st.pv?.CPR_BOTTOM || 0));
+  const isPullbackToCPR = Boolean(candleData && (candleData.low <= (st.pv?.CPR_TOP || 0) && candleData.high >= (st.pv?.CPR_BOTTOM || 0)));
 
   // Initial opening classification matching (Playbook standard)
   let activeCaseKey = null;
