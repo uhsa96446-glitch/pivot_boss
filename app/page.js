@@ -302,7 +302,7 @@ function LevelsTab({ st }) {
 
   const high = st.p.high || 1;
   const low = st.p.low || 0;
-  const close = st.p.close || 0;
+  const close = st.prevClose || 0;
   const range = high - low || 1;
   const closePct = Math.max(0, Math.min(100, ((close - low) / range) * 100));
 
@@ -351,7 +351,7 @@ function LevelsTab({ st }) {
             ["OPEN", st.p.open],
             ["HIGH", st.p.high],
             ["LOW", st.p.low],
-            ["CLOSE", st.p.close],
+            ["CLOSE", st.prevClose],
           ].map(([k, v]) => (
             <div key={k}>
               <span>{k}</span>
@@ -361,11 +361,11 @@ function LevelsTab({ st }) {
         </div>
         <div className="meter-wrapper">
           <div className="meter">
-            <span className="meter-pin" style={{ left: `${closePct}%` }} title={`Close: ${n(close, 2)}`} />
+            <span className="meter-pin" style={{ left: `${closePct}%` }} title={`Close: ${n(st.prevClose, 2)}`} />
           </div>
           <div className="meter-label">
             <span>LOW ({n(low, 2)})</span>
-            <span>CLOSE {n(close, 2)} ({closePct.toFixed(1)}%)</span>
+            <span>CLOSE {n(st.prevClose, 2)} ({closePct.toFixed(1)}%)</span>
             <span>HIGH ({n(high, 2)})</span>
           </div>
         </div>
