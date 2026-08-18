@@ -46,18 +46,17 @@ export function buildState(data) {
     }
 
     // Calculate Camarilla Opening Location (Section 12 of Playbook)
-    const openPrice = first15m?.open || data.today_full?.open || close;
+    const openPrice = first15m?.open || ib?.open || data.today_full?.open || close;
     let camOpenClass = "INSIDE_CAM";
     if (pv.H5 && openPrice > pv.H5) camOpenClass = "ABOVE_H5";
-    else if (pv.R4 && openPrice > pv.R4) camOpenClass = "ABOVE_R4";
     else if (pv.H4 && openPrice > pv.H4) camOpenClass = "ABOVE_H4";
     else if (pv.H3 && pv.H4 && openPrice > pv.H3 && openPrice <= pv.H4) camOpenClass = "H3_H4_ZONE";
     else if (pv.H3 && openPrice > cprTop && openPrice <= pv.H3) camOpenClass = "CPR_H3_ZONE";
     else if (openPrice >= cprBottom && openPrice <= cprTop) camOpenClass = "INSIDE_CPR";
     else if (pv.L3 && openPrice >= pv.L3 && openPrice < cprBottom) camOpenClass = "L3_CPR_ZONE";
     else if (pv.L3 && pv.L4 && openPrice >= pv.L4 && openPrice < pv.L3) camOpenClass = "L4_L3_ZONE";
-    else if (pv.L4 && openPrice < pv.L4) camOpenClass = "BELOW_L4";
     else if (pv.L5 && openPrice < pv.L5) camOpenClass = "BELOW_L5";
+    else if (pv.L4 && openPrice < pv.L4) camOpenClass = "BELOW_L4";
 
     // CPR Width Forecast (Section 4 of Playbook)
     const cprWidth = pv.CPR_WIDTH || (cprTop - cprBottom);
