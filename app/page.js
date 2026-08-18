@@ -59,12 +59,12 @@ function Action({ st }) {
           <b>{st.inValue ? "INSIDE" : st.aboveValue ? "ABOVE" : "BELOW"}</b>
         </div>
         <div>
-          <span>DAY TYPE</span>
-          <b>{st.day.type || "—"}</b>
+          <span>CPR FORECAST</span>
+          <b>{st.cprWidthForecast}</b>
         </div>
         <div>
-          <span>BIAS</span>
-          <b>{st.day.bias || "—"}</b>
+          <span>CAM OPEN</span>
+          <b>{st.camOpenClass}</b>
         </div>
       </div>
       <div className="beginner">
@@ -383,6 +383,13 @@ const conditionExplanations = {
   "PDL <= O <= PDH AND O < VAL": "Open inside prior day range & below Value Area (Bearish Imbalance)",
   "O > PDH": "Gap Up open above Prior Day High (Strong Bullish Imbalance)",
   "O < PDL": "Gap Down open below Prior Day Low (Strong Bearish Imbalance)",
+  "O > PDH AND 15M_REJECTED": "Gap Up open above Prior Day High with 15m Rejection (Gap Fill / Reversal)",
+  "O < PDL AND 15M_REJECTED": "Gap Down open below Prior Day Low with 15m Rejection (Gap Fill / Reversal)",
+  "BULLISH_TREND AND PULLBACK_TO_CPR": "Higher Value CPR Trend: Buying Pullbacks to Central Pivot Zone",
+  "BEARISH_TREND AND RALLY_TO_CPR": "Lower Value CPR Trend: Selling Rallies to Central Pivot Zone",
+  "INSIDE_DAY_COMPRESSION": "Inside Day Compression: Wait for Breakout of 2-Day Boundaries",
+  "NARROW_CPR AND RANGE_EXTENSION": "Narrow CPR Trend Day: Initiative Range Extension Away from Value",
+  "R1_OR_S1_BREAKOUT": "Floor Pivot Ladder Breakout: Continuation to R2/R3 or S2/S3",
 };
 
 function Scenarios({ st, data }) {
@@ -392,29 +399,102 @@ function Scenarios({ st, data }) {
   const openClass = data?.opening_classification || "PENDING";
   const isPending = openClass === "PENDING";
   const first15m = data?.first_15m_candle || null;
+  const ib = st.ib || data?.initial_balance || null;
 
-  const openClassMap = {
-    IN_VALUE: "case_a_in_range_in_value",
-    IN_RANGE_IN_VALUE: "case_a_in_range_in_value",
-    ABOVE_VALUE: "case_b_in_range_above_value",
-    IN_RANGE_ABOVE_VALUE: "case_b_in_range_above_value",
-    BELOW_VALUE: "case_c_in_range_below_value",
-    IN_RANGE_BELOW_VALUE: "case_c_in_range_below_value",
-    OUT_ABOVE: "case_d_out_above",
-    OUTSIDE_ABOVE: "case_d_out_above",
-    OUT_BELOW: "case_e_out_below",
-    OUTSIDE_BELOW: "case_e_out_below",
-  };
+  // Determine if Gap Reversal / Failure occurs based on candle acceptance
+  const isGapUp = openClass === "OUT_ABOVE" || openClass === "OUTSIDE_ABOVE";
+  const isGapDown = openClass === "OUT_BELOW" || openClass === "OUTSIDE_BELOW";
+  const candleData = ib || first15m;
+  const is15mRejected = candleData?.acceptance === "REJECTED" || candleData?.acceptance === "INSIDE_VALUE";
 
-
-  const activeCaseKey = openClassMap[openClass] || null;
+  let activeCaseKey = null;
+  if (st.twoDayRel === "INSIDE") activeCaseKey = "case_g_inside_day";
+  else if (st.cprWidthForecast?.includes("NARROW") && (isGapUp || isGapDown)) activeCaseKey = "case_h_double_distribution";
+  else if (openClass === "IN_VALUE" || openClass === "IN_RANGE_IN_VALUE") activeCaseKey = "case_a_in_range_in_value";
+  else if (openClass === "ABOVE_VALUE" || openClass === "IN_RANGE_ABOVE_VALUE") activeCaseKey = "case_b_in_range_above_value";
+  else if (openClass === "BELOW_VALUE" || openClass === "IN_RANGE_BELOW_VALUE") activeCaseKey = "case_c_in_range_below_value";
+  else if (isGapUp) {
+    activeCaseKey = is15mRejected ? "case_d_gap_reversal" : "case_d_out_above";
+  } else if (isGapDown) {
+    activeCaseKey = is15mRejected ? "case_e_gap_reversal" : "case_e_out_below";
+  }
 
   const cases = [
     ["CASE A · IN RANGE / VALUE", s.case_a_in_range_in_value, "neutral", "case_a_in_range_in_value"],
     ["CASE B · IN RANGE / ABOVE VALUE", s.case_b_in_range_above_value, "green", "case_b_in_range_above_value"],
     ["CASE C · IN RANGE / BELOW VALUE", s.case_c_in_range_below_value, "red", "case_c_in_range_below_value"],
-    ["CASE D · ABOVE PDH", s.case_d_out_above, "green", "case_d_out_above"],
-    ["CASE E · BELOW PDL", s.case_e_out_below, "red", "case_e_out_below"],
+    ["CASE D · ABOVE PDH (INITIATIVE)", s.case_d_out_above, "green", "case_d_out_above"],
+    ["CASE D2 · GAP UP REVERSAL / FAILED GAP", {
+      condition: "O > PDH AND 15M_REJECTED",
+      bias: "BEARISH",
+      primary: "First 15m candle rejected/accepted back inside value → GAP FILL SHORT",
+      primary_target: `POC (${st.va?.POC?.toFixed(1) || "—"}) → VAL (${st.va?.VAL?.toFixed(1) || "—"}) → CPR (${st.pv?.P?.toFixed(1) || "—"})`,
+      contingency: "If price re-takes 15m High → Resume Gap Continuation (LONG)",
+      contingency_target: `R2 (${st.pv?.R2?.toFixed(1) || "—"}) / R3 (${st.pv?.R3?.toFixed(1) || "—"})`,
+      failure: "Sellers fail to push price back into prior day range",
+      no_trade: "Avoid shorting if first 15m volume/conviction remains strongly bullish"
+    }, "red", "case_d_gap_reversal"],
+    ["CASE E · BELOW PDL (INITIATIVE)", s.case_e_out_below, "red", "case_e_out_below"],
+    ["CASE E2 · GAP DOWN REVERSAL / FAILED GAP", {
+      condition: "O < PDL AND 15M_REJECTED",
+      bias: "BULLISH",
+      primary: "First 15m candle rejected/accepted back inside value → GAP FILL LONG",
+      primary_target: `POC (${st.va?.POC?.toFixed(1) || "—"}) → VAH (${st.va?.VAH?.toFixed(1) || "—"}) → CPR (${st.pv?.P?.toFixed(1) || "—"})`,
+      contingency: "If price breaks 15m Low → Resume Gap Continuation (SHORT)",
+      contingency_target: `S2 (${st.pv?.S2?.toFixed(1) || "—"}) / S3 (${st.pv?.S3?.toFixed(1) || "—"})`,
+      failure: "Buyers fail to push price back into prior day range",
+      no_trade: "Avoid longing if first 15m volume/conviction remains strongly bearish"
+    }, "green", "case_e_gap_reversal"],
+    ["CASE F · CPR PULLBACK (UPTREND SUPPORT)", {
+      condition: "BULLISH_TREND AND PULLBACK_TO_CPR",
+      bias: "BULLISH",
+      primary: `In higher-value uptrend (${st.twoDayRel}), price pulls back into CPR (${st.pv?.P?.toFixed(1) || "—"}). Buy lower wick bullish rejection at CPR`,
+      primary_target: `VAH (${st.va?.VAH?.toFixed(1) || "—"}) → R1 (${st.pv?.R1?.toFixed(1) || "—"}) → R2 (${st.pv?.R2?.toFixed(1) || "—"})`,
+      contingency: "If price closes below CPR bottom (BC/TC) → Thesis Invalidated, Exit Long",
+      contingency_target: `VAL (${st.va?.VAL?.toFixed(1) || "—"}) / S1 (${st.pv?.S1?.toFixed(1) || "—"})`,
+      failure: "Sellers accept price below CPR zone",
+      no_trade: "Do not buy CPR touch without lower-wick bullish rejection candle"
+    }, "green", "case_f_cpr_bullish_pullback"],
+    ["CASE F2 · CPR RALLY (DOWNTREND RESISTANCE)", {
+      condition: "BEARISH_TREND AND RALLY_TO_CPR",
+      bias: "BEARISH",
+      primary: `In lower-value downtrend (${st.twoDayRel}), price rallies into CPR (${st.pv?.P?.toFixed(1) || "—"}). Short upper wick bearish rejection at CPR`,
+      primary_target: `VAL (${st.va?.VAL?.toFixed(1) || "—"}) → S1 (${st.pv?.S1?.toFixed(1) || "—"}) → S2 (${st.pv?.S2?.toFixed(1) || "—"})`,
+      contingency: "If price closes above CPR top (TC/BC) → Thesis Invalidated, Exit Short",
+      contingency_target: `VAH (${st.va?.VAH?.toFixed(1) || "—"}) / R1 (${st.pv?.R1?.toFixed(1) || "—"})`,
+      failure: "Buyers accept price above CPR zone",
+      no_trade: "Do not short CPR touch without upper-wick bearish rejection candle"
+    }, "red", "case_f2_cpr_bearish_pullback"],
+    ["CASE G · INSIDE DAY BREAKOUT (COMPRESSION)", {
+      condition: "INSIDE_DAY_COMPRESSION",
+      bias: "NEUTRAL",
+      primary: `Prior day is Inside Day or CPR is Inside (${st.twoDayRel}). Wait for 15m breakout above PDH (${st.p?.high?.toFixed(1) || "—"}) → LONG`,
+      primary_target: `PDH → R1 (${st.pv?.R1?.toFixed(1) || "—"}) → R2 (${st.pv?.R2?.toFixed(1) || "—"})`,
+      contingency: `If 15m breaks below PDL (${st.p?.low?.toFixed(1) || "—"}) → SHORT`,
+      contingency_target: `PDL → S1 (${st.pv?.S1?.toFixed(1) || "—"}) → S2 (${st.pv?.S2?.toFixed(1) || "—"})`,
+      failure: "False breakout at 2-day high/low boundaries",
+      no_trade: "Do not trade inside the 2-day high-low compression range"
+    }, "neutral", "case_g_inside_day"],
+    ["CASE H · DOUBLE DISTRIBUTION TREND DAY", {
+      condition: "NARROW_CPR AND RANGE_EXTENSION",
+      bias: "BULLISH",
+      primary: `Narrow CPR (${st.cprWidthForecast}) + Initiative Range Extension away from value → Follow trend direction without fading`,
+      primary_target: `R2 (${st.pv?.R2?.toFixed(1) || "—"}) → R3 (${st.pv?.R3?.toFixed(1) || "—"}) → H5 (${st.pv?.H5?.toFixed(1) || "—"})`,
+      contingency: "If range extension fails and price returns to Initial Balance → Exit Trend Position",
+      contingency_target: `POC (${st.va?.POC?.toFixed(1) || "—"})`,
+      failure: "Initiative buyers/sellers lose momentum",
+      no_trade: "Never fade a confirmed Double Distribution Trend Day"
+    }, "green", "case_h_double_distribution"],
+    ["CASE I · FLOOR PIVOT BREAKOUT LADDER", {
+      condition: "R1_OR_S1_BREAKOUT",
+      bias: "NEUTRAL",
+      primary: `If price breaks R1 (${st.pv?.R1?.toFixed(1) || "—"}) & holds → LONG continuation ladder`,
+      primary_target: `R2 (${st.pv?.R2?.toFixed(1) || "—"}) → R3 (${st.pv?.R3?.toFixed(1) || "—"}) → R4 (${st.pv?.R4?.toFixed(1) || "—"})`,
+      contingency: `If price breaks S1 (${st.pv?.S1?.toFixed(1) || "—"}) & holds → SHORT continuation ladder`,
+      contingency_target: `S2 (${st.pv?.S2?.toFixed(1) || "—"}) → S3 (${st.pv?.S3?.toFixed(1) || "—"}) → S4 (${st.pv?.S4?.toFixed(1) || "—"})`,
+      failure: "Pivot level rejects breakout attempt",
+      no_trade: "Avoid trading between R1 and S1 when volume is low"
+    }, "neutral", "case_i_pivot_breakout_ladder"],
   ];
 
   const filteredCases = cases.filter(([title, o, tone, key]) => {
@@ -425,84 +505,62 @@ function Scenarios({ st, data }) {
     return true;
   });
 
-  const formatDynamicTarget = (rawTarget) => {
-    if (!rawTarget) return "";
-    const p = st.pv || {};
-    const cur = first15m?.close || st.p?.close || 0;
+  const fmtPrice = (val) => (typeof val === "number" ? val.toFixed(1) : "");
 
-    let targetStr = rawTarget;
-
-    // Dynamic S1 check: If current price has already breached or tested S1, advance target to S2 & S3
-    if (targetStr.includes("S1") && p.S1) {
-      if (cur <= p.S1) {
-        targetStr = targetStr.replaceAll("S1", `S2 (${p.S2?.toFixed(1)}) / S3 (${p.S3?.toFixed(1)})`);
-      } else {
-        targetStr = targetStr.replaceAll("S1", `S1 (${p.S1?.toFixed(1)}) / S2 (${p.S2?.toFixed(1)})`);
-      }
-    }
-
-    // Dynamic R1 check: If current price has already breached R1, advance target to R2 & R3
-    if (targetStr.includes("R1") && p.R1) {
-      if (cur >= p.R1) {
-        targetStr = targetStr.replaceAll("R1", `R2 (${p.R2?.toFixed(1)}) / R3 (${p.R3?.toFixed(1)})`);
-      } else {
-        targetStr = targetStr.replaceAll("R1", `R1 (${p.R1?.toFixed(1)}) / R2 (${p.R2?.toFixed(1)})`);
-      }
-    }
-
-    // Append level prices if present
-    if (targetStr.includes("POC") && !targetStr.includes("POC (") && st.va?.POC) {
-      targetStr = targetStr.replaceAll("POC", `POC (${st.va.POC.toFixed(1)})`);
-    }
-    if (targetStr.includes("CPR") && !targetStr.includes("CPR (") && p.P) {
-      targetStr = targetStr.replaceAll("CPR", `CPR (${p.P.toFixed(1)})`);
-    }
-    if (targetStr.includes("VAH") && !targetStr.includes("VAH (") && st.va?.VAH) {
-      targetStr = targetStr.replaceAll("VAH", `VAH (${st.va.VAH.toFixed(1)})`);
-    }
-    if (targetStr.includes("VAL") && !targetStr.includes("VAL (") && st.va?.VAL) {
-      targetStr = targetStr.replaceAll("VAL", `VAL (${st.va.VAL.toFixed(1)})`);
-    }
-
-    return targetStr;
+  const formatCamClass = (str) => {
+    if (!str) return "Value Zone";
+    const labels = {
+      ABOVE_H5: "Above H5 / R4 (Extreme Gap Up)",
+      ABOVE_R4: "Above R4 (Extreme Gap Up)",
+      ABOVE_H4: "Above H4 (Initiative Bullish)",
+      H3_H4_ZONE: "H3–H4 Breakout Zone",
+      CPR_H3_ZONE: "CPR–H3 Bullish Zone",
+      INSIDE_CPR: "Inside CPR (Compression)",
+      L3_CPR_ZONE: "L3–CPR Bearish Zone",
+      L4_L3_ZONE: "L4–L3 Breakdown Zone",
+      BELOW_L4: "Below L4 (Initiative Bearish)",
+      BELOW_L5: "Below L5 / S4 (Extreme Gap Down)",
+      INSIDE_CAM: "Inside Camarilla Range",
+    };
+    return labels[str] || str.replace(/_/g, " ");
   };
 
-  const fmtPrice = (val) => (typeof val === "number" ? val.toFixed(1) : "");
+  const twoDayLabel = (st.twoDayRel || "NEUTRAL").replace(/_/g, " ");
 
   const enrichedScenarios = {
     case_a_in_range_in_value: {
-      primary: "If price breaks VAH and accepts → LONG",
-      primary_target: `VAH (${fmtPrice(st.va?.VAH)}) → R1 (${fmtPrice(st.pv?.R1)}) / R2 (${fmtPrice(st.pv?.R2)})`,
-      contingency: "If price breaks VAL and accepts → SHORT",
-      contingency_target: `VAL (${fmtPrice(st.va?.VAL)}) → S1 (${fmtPrice(st.pv?.S1)}) / S2 (${fmtPrice(st.pv?.S2)}) / S3 (${fmtPrice(st.pv?.S3)})`,
-      no_trade: `Price remains inside value (${fmtPrice(st.va?.VAL)} - ${fmtPrice(st.va?.VAH)})`,
+      primary: `Opening zone: ${formatCamClass(st.camOpenClass)} · 2-Day CPR: ${twoDayLabel} · CPR Width: ${st.cprWidthForecast || "NORMAL"}. If price breaks VAH/H3 and accepts → LONG`,
+      primary_target: `VAH (${fmtPrice(st.va?.VAH)}) → H3 (${fmtPrice(st.pv?.H3)}) → R1 (${fmtPrice(st.pv?.R1)})`,
+      contingency: `If price breaks VAL/L3 and accepts → SHORT`,
+      contingency_target: `VAL (${fmtPrice(st.va?.VAL)}) → L3 (${fmtPrice(st.pv?.L3)}) → S1 (${fmtPrice(st.pv?.S1)})`,
+      no_trade: `Price remains inside value (${fmtPrice(st.va?.VAL)} - ${fmtPrice(st.va?.VAH)}). ${st.cprWidthForecast?.includes("WIDE") ? "Wide CPR: Trade extremes (fade H3/L3)." : "Inside CPR: Compression breakout watch."}`,
     },
     case_b_in_range_above_value: {
-      primary: "If price accepts above VAH → LONG candidate",
-      primary_target: `R1 (${fmtPrice(st.pv?.R1)}) / R2 (${fmtPrice(st.pv?.R2)}) / R3 (${fmtPrice(st.pv?.R3)})`,
-      contingency: "If price returns below VAH → CANCEL bullish thesis, SHORT",
-      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pv?.P)}) / VAL (${fmtPrice(st.va?.VAL)})`,
-      failure: "VAH acts as strong resistance",
+      primary: `Opening zone: ${formatCamClass(st.camOpenClass)} · 2-Day Bias: ${twoDayLabel}. If price accepts above VAH / tests H3 rejection → LONG candidate`,
+      primary_target: `H3 (${fmtPrice(st.pv?.H3)}) → H4 (${fmtPrice(st.pv?.H4)}) → R1 (${fmtPrice(st.pv?.R1)})`,
+      contingency: "If price returns below VAH / fails H3 → CANCEL bullish thesis, SHORT",
+      contingency_target: `POC (${fmtPrice(st.va?.POC)}) → CPR (${fmtPrice(st.pv?.P)}) → VAL (${fmtPrice(st.va?.VAL)})`,
+      failure: "VAH / H3 acts as strong resistance (Hot Zone rejection)",
     },
     case_c_in_range_below_value: {
-      primary: "If price accepts below VAL → SHORT candidate",
-      primary_target: `S1 (${fmtPrice(st.pv?.S1)}) / S2 (${fmtPrice(st.pv?.S2)}) / S3 (${fmtPrice(st.pv?.S3)})`,
-      contingency: "If price reclaims VAL → CANCEL bearish thesis, LONG",
-      contingency_target: `POC (${fmtPrice(st.va?.POC)}) / CPR (${fmtPrice(st.pv?.P)}) / VAH (${fmtPrice(st.va?.VAH)})`,
-      failure: "VAL acts as strong support",
+      primary: `Opening zone: ${formatCamClass(st.camOpenClass)} · 2-Day Bias: ${twoDayLabel}. If price accepts below VAL / tests L3 rejection → SHORT candidate`,
+      primary_target: `L3 (${fmtPrice(st.pv?.L3)}) → L4 (${fmtPrice(st.pv?.L4)}) → S1 (${fmtPrice(st.pv?.S1)})`,
+      contingency: "If price reclaims VAL / L3 → CANCEL bearish thesis, LONG",
+      contingency_target: `POC (${fmtPrice(st.va?.POC)}) → CPR (${fmtPrice(st.pv?.P)}) → VAH (${fmtPrice(st.va?.VAH)})`,
+      failure: "VAL / L3 acts as strong support (Hot Zone rejection)",
     },
     case_d_out_above: {
-      primary: "If first 15m closes above PDH → Initiative Bullish confirmation, LONG",
-      primary_target: `R2 (${fmtPrice(st.pv?.R2)}) / R3 (${fmtPrice(st.pv?.R3)}) / R4 (${fmtPrice(st.pv?.R4)}) / H5 (${fmtPrice(st.pv?.H5)})`,
-      contingency: "If first 15m closes below PDH → Failed Gap Up, SHORT",
-      contingency_target: `PDH (${fmtPrice(st.p?.high)}) / VAH (${fmtPrice(st.va?.VAH)}) / POC (${fmtPrice(st.va?.POC)})`,
+      primary: `Opening zone: ${formatCamClass(st.camOpenClass)} · 2-Day Bias: ${twoDayLabel}. If first 15m candle accepts above PDH/H4 → Initiative Bullish Breakout, LONG`,
+      primary_target: `H4 (${fmtPrice(st.pv?.H4)}) → H5 (${fmtPrice(st.pv?.H5)}) / R2 (${fmtPrice(st.pv?.R2)})`,
+      contingency: "If first 15m candle closes back below PDH/H4 → Failed Gap Up, SHORT",
+      contingency_target: `PDH (${fmtPrice(st.p?.high)}) → H3 (${fmtPrice(st.pv?.H3)}) → VAH (${fmtPrice(st.va?.VAH)}) → POC (${fmtPrice(st.va?.POC)})`,
       failure: "Gap fill back inside prior range",
     },
     case_e_out_below: {
-      primary: "If first 15m closes below PDL → Initiative Bearish confirmation, SHORT",
-      primary_target: `S2 (${fmtPrice(st.pv?.S2)}) / S3 (${fmtPrice(st.pv?.S3)}) / S4 (${fmtPrice(st.pv?.S4)}) / L5 (${fmtPrice(st.pv?.L5)})`,
-      contingency: "If first 15m closes above PDL → Failed Gap Down, LONG",
-      contingency_target: `PDL (${fmtPrice(st.p?.low)}) / VAL (${fmtPrice(st.va?.VAL)}) / POC (${fmtPrice(st.va?.POC)})`,
+      primary: `Opening zone: ${formatCamClass(st.camOpenClass)} · 2-Day Bias: ${twoDayLabel}. If first 15m candle accepts below PDL/L4 → Initiative Bearish Breakdown, SHORT`,
+      primary_target: `L4 (${fmtPrice(st.pv?.L4)}) → L5 (${fmtPrice(st.pv?.L5)}) / S2 (${fmtPrice(st.pv?.S2)})`,
+      contingency: "If first 15m candle closes back above PDL/L4 → Failed Gap Down, LONG",
+      contingency_target: `PDL (${fmtPrice(st.p?.low)}) → L3 (${fmtPrice(st.pv?.L3)}) → VAL (${fmtPrice(st.va?.VAL)}) → POC (${fmtPrice(st.va?.POC)})`,
       failure: "Gap fill back inside prior range",
     },
   };
@@ -525,9 +583,11 @@ function Scenarios({ st, data }) {
           <p>
             {isPending
               ? "Market opens at 09:15 AM · Review playbooks below before session start"
-              : first15m
-                ? `First 15m Candle: High ${first15m.high} · Low ${first15m.low} · Close ${first15m.close}${first15m.type ? ` · ${first15m.type}` : ""}${first15m.acceptance ? ` (${first15m.acceptance})` : ""}`
-                : "Awaiting 15m candle close for confirmation"}
+              : ib
+                ? `Initial Balance (IB 09:15–10:15): IBH ${ib.high} · IBL ${ib.low} · Range ${ib.range || (ib.high - ib.low).toFixed(1)} pts ${ib.width_type ? `(${ib.width_type})` : ""}`
+                : first15m
+                  ? `First 15m Candle: High ${first15m.high} · Low ${first15m.low} · Close ${first15m.close}${first15m.type ? ` · ${first15m.type}` : ""}${first15m.acceptance ? ` (${first15m.acceptance})` : ""}`
+                  : "Awaiting candle close for confirmation"}
           </p>
 
         </div>
@@ -548,7 +608,7 @@ function Scenarios({ st, data }) {
       {/* Scenario Filter Bar */}
       <div className="scenario-filter-bar">
         {[
-          ["all", "All Scenarios (5)"],
+          ["all", `All Scenarios (${cases.length})`],
           ["active", activeCaseKey ? "Active Match Only" : "Active Match (Pending)"],
           ["bullish", "Bullish Plays"],
           ["bearish", "Bearish Plays"],
@@ -570,22 +630,22 @@ function Scenarios({ st, data }) {
         <div className="flow-step">
           <span className="flow-step-num">STEP 01</span>
           <h4>Open Location</h4>
-          <p>Classify opening vs prior Range (PDH/PDL) and Value Area (VAH/VAL).</p>
+          <p>Classify opening vs Range (PDH/PDL), Value (VAH/VAL), and Camarilla ({st.camOpenClass || "Cam Levels"}).</p>
         </div>
         <div className="flow-step">
           <span className="flow-step-num">STEP 02</span>
-          <h4>15m Acceptance</h4>
-          <p>Observe first 15m candle close to verify initiative vs responsive conviction.</p>
+          <h4>Structure Forecast</h4>
+          <p>CPR Width ({st.cprWidthForecast || "Normal"}): {st.cprWidthForecast?.includes("NARROW") ? "Trend/Breakout day likely" : st.cprWidthForecast?.includes("WIDE") ? "Range-bound day likely" : "Balanced expectation"}.</p>
         </div>
         <div className="flow-step">
           <span className="flow-step-num">STEP 03</span>
-          <h4>Trigger Level</h4>
-          <p>Wait for price action setup (Wick / Doji / Breakout) at decision levels.</p>
+          <h4>15m Acceptance</h4>
+          <p>Observe 15m candle close ({first15m?.type || "Pending"}{first15m?.acceptance ? ` / ${first15m.acceptance}` : ""}) to confirm initiative or reversal.</p>
         </div>
         <div className="flow-step">
           <span className="flow-step-num">STEP 04</span>
           <h4>Target / Invalidation</h4>
-          <p>Execute with explicit target level (R1/S1/POC) and tight stop invalidation.</p>
+          <p>Execute with explicit target level (R1/S1/H3/L3/POC) and tight stop invalidation.</p>
         </div>
       </div>
 

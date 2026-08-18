@@ -176,7 +176,12 @@ class UpstoxClient:
         """Fetch the latest access token from the GitHub cache file."""
         url = f"https://api.github.com/repos/{USERNAME}/{REPO}/contents/{FILE_PATH}"
         try:
-            response = requests.get(url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+            # Try with auth header first, fallback to unauthenticated request for public repos
+            headers = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
+            response = requests.get(url, headers=headers)
+            if response.status_code != 200 and GITHUB_TOKEN:
+                response = requests.get(url)  # Fallback unauthenticated request
+
             if response.status_code == 200:
                 data = response.json()
                 encoded = data.get("content", "")

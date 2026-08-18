@@ -274,5 +274,16 @@
         "Wait if reversal level touched but no reversal confirmation"
       ]
     }
+  },
+  "initial_balance": {
+    "open": 24223.85,
+    "high": 24269.65,
+    "low": 24211.1,
+    "close": 24220.2,
+    "volume": 0,
+    "type": "DOJI",
+    "acceptance": "BELOW_VALUE",
+    "range": 58.55,
+    "width_type": "NARROW_IB"
   }
 }

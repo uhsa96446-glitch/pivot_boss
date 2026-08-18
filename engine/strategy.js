@@ -5,10 +5,11 @@ export function buildState(data) {
         pred = data.predictions || {},
         s = pred.scenarios || {},
         day = pred.day_type || {},
-        first15m = data.first_15m_candle || null;
+        first15m = data.first_15m_candle || null,
+        ib = data.initial_balance || null;
 
-    // Use live 15m close if available, else current session close, else previous close
-    const close = first15m?.close || data.today_full?.close || p.close || 0;
+    // Use live candle close (IB close or 15m close) if available, else current session close, else previous close
+    const close = ib?.close || first15m?.close || data.today_full?.close || p.close || 0;
     const prevClose = p.close || 0;
     const openClass = data.opening_classification || "PENDING";
 
@@ -44,6 +45,29 @@ export function buildState(data) {
         headline = `Price (${close}) is inside value area (${va.VAL} - ${va.VAH}) — avoid trading the middle. Watch VAH & VAL extremes.`;
     }
 
+    // Calculate Camarilla Opening Location (Section 12 of Playbook)
+    const openPrice = first15m?.open || data.today_full?.open || close;
+    let camOpenClass = "INSIDE_CAM";
+    if (pv.H5 && openPrice > pv.H5) camOpenClass = "ABOVE_H5";
+    else if (pv.R4 && openPrice > pv.R4) camOpenClass = "ABOVE_R4";
+    else if (pv.H4 && openPrice > pv.H4) camOpenClass = "ABOVE_H4";
+    else if (pv.H3 && pv.H4 && openPrice > pv.H3 && openPrice <= pv.H4) camOpenClass = "H3_H4_ZONE";
+    else if (pv.H3 && openPrice > cprTop && openPrice <= pv.H3) camOpenClass = "CPR_H3_ZONE";
+    else if (openPrice >= cprBottom && openPrice <= cprTop) camOpenClass = "INSIDE_CPR";
+    else if (pv.L3 && openPrice >= pv.L3 && openPrice < cprBottom) camOpenClass = "L3_CPR_ZONE";
+    else if (pv.L3 && pv.L4 && openPrice >= pv.L4 && openPrice < pv.L3) camOpenClass = "L4_L3_ZONE";
+    else if (pv.L4 && openPrice < pv.L4) camOpenClass = "BELOW_L4";
+    else if (pv.L5 && openPrice < pv.L5) camOpenClass = "BELOW_L5";
+
+    // CPR Width Forecast (Section 4 of Playbook)
+    const cprWidth = pv.CPR_WIDTH || (cprTop - cprBottom);
+    let cprWidthForecast = "NORMAL";
+    if (cprWidth > 0) {
+        const relWidthPct = (cprWidth / (close || 1)) * 100;
+        if (relWidthPct < 0.25) cprWidthForecast = "NARROW (TREND)";
+        else if (relWidthPct > 0.6) cprWidthForecast = "WIDE (RANGE)";
+    }
+
     return {
         p: { ...p, close },
         pv,
@@ -62,6 +86,9 @@ export function buildState(data) {
         tone,
         headline,
         rangePct: close ? ((p.high - p.low) / close) * 100 : 0,
+        camOpenClass,
+        cprWidthForecast,
+        ib,
     };
 }
 
