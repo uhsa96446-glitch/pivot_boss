@@ -1,9 +1,9 @@
 name: Live Market 9:30 AM
 
 on:
-  schedule:
+  # schedule:
     # Runs at 04:00 UTC = 9:30 AM IST (UTC+5:30)
-    - cron: '0 4 * * 1-5'
+    # - cron: '0 4 * * 1-5'
   workflow_dispatch:
     
 jobs:
