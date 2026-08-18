@@ -420,6 +420,7 @@ function Scenarios({ st, data, ltp }) {
   const isPullbackToCPR = Boolean(candleData && (candleData.low <= (st.pv?.CPR_TOP || 0) && candleData.high >= (st.pv?.CPR_BOTTOM || 0)));
 
   // Initial opening classification matching (Playbook standard)
+  // CASE G: Inside CPR Compression (Today's CPR is strictly inside Yesterday's CPR)
   let activeCaseKey = null;
   if (st.twoDayRel === "INSIDE") activeCaseKey = "case_g_inside_day";
   else if (isGapUp && is15mRejected) activeCaseKey = "case_d_gap_reversal";
