@@ -265,9 +265,9 @@ def main():
         pdl = existing["previous_session"].get("low", 0)
         vah = existing.get("value_area", {}).get("VAH", 0)
         val = existing.get("value_area", {}).get("VAL", 0)
-        if open_price >= pdh:
+        if open_price > pdh:
             classification = "OUT_ABOVE"
-        elif open_price <= pdl:
+        elif open_price < pdl:
             classification = "OUT_BELOW"
         elif open_price > vah:
             classification = "ABOVE_VALUE"
@@ -282,13 +282,22 @@ def main():
         if _o is not None and _h is not None and _l is not None and _c is not None:
             _vah = existing.get("value_area", {}).get("VAH", 0) if existing else 0
             _val = existing.get("value_area", {}).get("VAL", 0) if existing else 0
+            _pdh = existing.get("previous_session", {}).get("high", 0) if existing else 0
+            _pdl = existing.get("previous_session", {}).get("low", 0) if existing else 0
+
             _body = abs(_c - _o)
             _rng = _h - _l
             if _rng == 0 or (_body / _rng) < 0.10:
                 _ctype = "DOJI"
             elif _c > _o: _ctype = "BULLISH"
             else: _ctype = "BEARISH"
-            if _c > _vah: _acc = "ABOVE_VALUE"
+
+            # Acceptance / Rejection evaluation per Playbook §10, §11, §13
+            if classification == "OUT_ABOVE":
+                _acc = "REJECTED" if _c < _pdh else "ACCEPTED_OUTSIDE"
+            elif classification == "OUT_BELOW":
+                _acc = "REJECTED" if _c > _pdl else "ACCEPTED_OUTSIDE"
+            elif _c > _vah: _acc = "ABOVE_VALUE"
             elif _c < _val: _acc = "BELOW_VALUE"
             else: _acc = "INSIDE_VALUE"
 
