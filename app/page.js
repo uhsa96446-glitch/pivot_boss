@@ -1091,7 +1091,7 @@ export default function Page() {
           </div>
         </div>
         <div className="topmeta">
-          <i aria-label="Live indicator" role="img" /> {topbarStatus} <span>{sessionTag}</span>
+          <i aria-label="Live indicator" role="img" /> {sessionTag} </span>
         </div>
       </header>
 
