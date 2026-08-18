@@ -255,44 +255,6 @@ function Overview({ st, ltp }) {
         <Levels st={st} ltp={ltp} />
         <Plan st={st} />
       </div>
-      <div className="grid two">
-        <Card>
-          <Title e="FOUR QUESTIONS" t="Read the auction" />
-          <div className="questions">
-            {[
-              ["01", "WHERE IS VALUE?", "POC · VAH · VAL · CPR"],
-              ["02", "WHO IS IN CONTROL?", "Responsive or initiative"],
-              ["03", "WHAT DOES STRUCTURE FORECAST?", "Trend or range"],
-              ["04", "WHAT IS PRICE DOING?", "Acceptance or rejection"],
-            ].map((x) => (
-              <div key={x[0]}>
-                <b>{x[0]}</b>
-                <strong>{x[1]}</strong>
-                <small>{x[2]}</small>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <Title e="TRADE ENGINE" t="Before you enter" />
-          <div className="engine">
-            <span>CONTEXT</span>
-            <i>→</i>
-            <span>LOCATION</span>
-            <i>→</i>
-            <span>PRICE ACTION</span>
-            <i>→</i>
-            <span>CONFIRMATION</span>
-            <i>→</i>
-            <strong>ENTRY</strong>
-          </div>
-          <div className="engine2">
-            <span>INVALIDATION</span>
-            <span>TARGET</span>
-            <span>CONTINGENCY</span>
-          </div>
-        </Card>
-      </div>
       <Hot st={st} />
     </div>
   );
