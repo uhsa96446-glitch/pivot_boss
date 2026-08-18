@@ -67,13 +67,25 @@ export function buildState(data) {
         else if (relWidthPct > 0.6) cprWidthForecast = "WIDE (RANGE)";
     }
 
-    // PivotBoss 5-State Market Regime Classifier (§4, §5, §6–11, §12, §13, §22, §23, §24, §25, §42)
+    // PivotBoss 5-State Market Regime Classifier (§4, §5, §6–11, §12, §13, §22, §23, §24, §25, §42, §45)
     const isOpenAboveH5 = pv.H5 && openPrice > pv.H5;
     const isOpenBelowL5 = pv.L5 && openPrice < pv.L5;
     const isGapUp = openClass === "OUT_ABOVE" || openClass === "OUTSIDE_ABOVE";
     const isGapDown = openClass === "OUT_BELOW" || openClass === "OUTSIDE_BELOW";
-    const gapCandle = first15m;
-    const is15mRejected = Boolean(gapCandle?.acceptance === "REJECTED" || gapCandle?.acceptance === "INSIDE_VALUE");
+
+    // Check 15m candle close vs prior day boundaries (PDH / PDL / VAH / VAL)
+    const pdh = p.high || 0;
+    const pdl = p.low || 0;
+    const candleClose = first15m?.close || close;
+    const has15mClosed = Boolean(first15m && first15m.close);
+
+    // 15m Rejection vs Acceptance evaluation per Playbook §10, §11
+    const is15mAcceptedAbovePDH = has15mClosed && candleClose > pdh;
+    const is15mAcceptedBelowPDL = has15mClosed && candleClose < pdl;
+    const is15mRejected = has15mClosed
+        ? (isGapUp && candleClose < pdh) || (isGapDown && candleClose > pdl) || first15m.acceptance === "REJECTED" || first15m.acceptance === "INSIDE_VALUE"
+        : false;
+
     const isNarrowCPR = cprWidthForecast.includes("NARROW");
     const isWideCPR = cprWidthForecast.includes("WIDE");
     const twoDay = data.two_day_relationship || "LOWER_VALUE";
@@ -88,22 +100,26 @@ export function buildState(data) {
         regime = "WILD MOVE (HIGH VOLATILITY)";
         regimeTone = "purple";
         regimeDesc = "Extreme volatility / gap shock. Reduce size; wait for IB establishment before entering.";
-    } else if (isNarrowCPR && isGapUp && !is15mRejected) {
+    } else if ((isGapUp || is15mAcceptedAbovePDH) && !is15mRejected && (isNarrowCPR || aboveValue)) {
         regime = "STRONG BULLISH (INITIATIVE)";
         regimeTone = "green";
-        regimeDesc = "Initiative buyers in control. Buy VWAP / VAH / PDH pullbacks toward R2/R3/H5.";
-    } else if (isNarrowCPR && isGapDown && !is15mRejected) {
+        regimeDesc = "Initiative buyers confirmed (15m close > PDH). Buy VWAP / VAH / PDH pullbacks toward R2/R3/H5.";
+    } else if ((isGapDown || is15mAcceptedBelowPDL) && !is15mRejected && (isNarrowCPR || belowValue)) {
         regime = "STRONG BEARISH (INITIATIVE)";
         regimeTone = "red";
-        regimeDesc = "Initiative sellers in control. Sell VWAP / VAL / PDL rallies toward S2/S3/L5.";
-    } else if (isHigherVal || (isGapDown && is15mRejected)) {
+        regimeDesc = "Initiative sellers confirmed (15m close < PDL). Sell VWAP / VAL / PDL rallies toward S2/S3/L5.";
+    } else if ((isGapDown && is15mRejected) || (isHigherVal && !belowValue)) {
         regime = "SIDEWAYS TO BULLISH";
         regimeTone = "green";
-        regimeDesc = "Accumulation / Bullish Bias. Buy lower-wick rejections at CPR / VAL / L3 support.";
-    } else if (isLowerVal || (isGapUp && is15mRejected)) {
+        regimeDesc = is15mRejected && isGapDown
+            ? "Failed Gap Down confirmed (15m closed inside range). Bullish gap fill toward POC/VAH."
+            : "Accumulation / Bullish Bias. Buy lower-wick rejections at CPR / VAL / L3 support.";
+    } else if ((isGapUp && is15mRejected) || (isLowerVal && !aboveValue)) {
         regime = "SIDEWAYS TO BEARISH";
         regimeTone = "red";
-        regimeDesc = "Distribution / Bearish Bias. Sell upper-wick rejections at CPR / VAH / H3 resistance.";
+        regimeDesc = is15mRejected && isGapUp
+            ? "Failed Gap Up confirmed (15m closed inside range). Bearish gap fill toward POC/VAL."
+            : "Distribution / Bearish Bias. Sell upper-wick rejections at CPR / VAH / H3 resistance.";
     } else if (isWideCPR || inValue) {
         regime = "SIDEWAYS / BALANCED";
         regimeTone = "yellow";
