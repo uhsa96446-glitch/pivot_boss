@@ -799,7 +799,7 @@ button {
 }
 
 .active-scenario-banner {
-  background: linear-gradient(135deg, #131b2e, #0c101d);
+  background: linear-gradient(145deg, #16181fdd, #0d0f13dd);
   border: 1px solid #3b82f644;
   border-left: 4px solid #3b82f6;
   border-radius: 14px;
