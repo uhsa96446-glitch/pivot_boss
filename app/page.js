@@ -404,9 +404,16 @@ function Scenarios({ st, data, ltp }) {
   // Determine if Gap Reversal / Failure occurs based on candle acceptance
   const isGapUp = openClass === "OUT_ABOVE" || openClass === "OUTSIDE_ABOVE";
   const isGapDown = openClass === "OUT_BELOW" || openClass === "OUTSIDE_BELOW";
-  const candleData = ib || first15m;
-  const is15mRejected = Boolean(candleData?.acceptance === "REJECTED" || candleData?.acceptance === "INSIDE_VALUE");
+  // IMPORTANT: Use first15m (not IB) for gap reversal check.
+  // IB acceptance reflects the full 1-hour picture; first 15m determines initial gap rejection.
+  const gapCheckCandle = first15m;  // always use 15m for gap reversal
+  const is15mRejected = Boolean(
+    gapCheckCandle?.acceptance === "REJECTED" ||
+    gapCheckCandle?.acceptance === "INSIDE_VALUE"
+  );
 
+  // Use IB data (if available) for CPR pullback and IB range analysis
+  const candleData = ib || first15m;
   // Determine CPR Pullback candidates
   const isHigherValue = st.twoDayRel === "HIGHER_VALUE" || st.twoDayRel === "OVERLAPPING_HIGHER";
   const isLowerValue = st.twoDayRel === "LOWER_VALUE" || st.twoDayRel === "OVERLAPPING_LOWER";
