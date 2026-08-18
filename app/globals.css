@@ -92,6 +92,12 @@ button {
   animation: livePulse 2s infinite;
 }
 
+.topmeta i.dot-closed {
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+  animation: none;
+}
+
 @keyframes livePulse {
   0% {
     opacity: 1;
