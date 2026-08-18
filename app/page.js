@@ -409,15 +409,14 @@ function Scenarios({ st, data }) {
 
   let activeCaseKey = null;
   if (st.twoDayRel === "INSIDE") activeCaseKey = "case_g_inside_day";
+  else if (isGapUp && is15mRejected) activeCaseKey = "case_d_gap_reversal";
+  else if (isGapDown && is15mRejected) activeCaseKey = "case_e_gap_reversal";
   else if (st.cprWidthForecast?.includes("NARROW") && (isGapUp || isGapDown)) activeCaseKey = "case_h_double_distribution";
   else if (openClass === "IN_VALUE" || openClass === "IN_RANGE_IN_VALUE") activeCaseKey = "case_a_in_range_in_value";
   else if (openClass === "ABOVE_VALUE" || openClass === "IN_RANGE_ABOVE_VALUE") activeCaseKey = "case_b_in_range_above_value";
   else if (openClass === "BELOW_VALUE" || openClass === "IN_RANGE_BELOW_VALUE") activeCaseKey = "case_c_in_range_below_value";
-  else if (isGapUp) {
-    activeCaseKey = is15mRejected ? "case_d_gap_reversal" : "case_d_out_above";
-  } else if (isGapDown) {
-    activeCaseKey = is15mRejected ? "case_e_gap_reversal" : "case_e_out_below";
-  }
+  else if (isGapUp) activeCaseKey = "case_d_out_above";
+  else if (isGapDown) activeCaseKey = "case_e_out_below";
 
   const cases = [
     ["CASE A · IN RANGE / VALUE", s.case_a_in_range_in_value, "neutral", "case_a_in_range_in_value"],
