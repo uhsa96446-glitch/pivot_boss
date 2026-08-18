@@ -1701,6 +1701,6 @@ footer {
   footer {
     flex-direction: column;
     gap: 8px;
-    font-size: 9px;
+    font-size: 11px;
   }
 }
