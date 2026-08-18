@@ -799,8 +799,8 @@ button {
 }
 
 .active-scenario-banner {
-  background: linear-gradient(135deg, #131b2e, #0c101d);
-  border: 1px solid #3b82f644;
+  background: linear-gradient(145deg, #16181fdd, #0d0f13dd);
+  border: 1px solid var(--line);
   border-left: 4px solid #3b82f6;
   border-radius: 14px;
   padding: 16px 20px;
@@ -893,8 +893,8 @@ button {
 }
 
 .scenario-filter-btn {
-  background: #0d0f14;
-  border: 1px solid #222632;
+  background: var(--card);
+  border: 1px solid var(--line);
   color: #8b92a0;
   padding: 6px 14px;
   border-radius: 8px;
