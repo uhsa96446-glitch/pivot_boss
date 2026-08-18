@@ -1,0 +1,42 @@
+name: Live Market IB 10:15 AM
+
+on:
+  schedule:
+    # Runs at 04:00 UTC = 9:30 AM IST (UTC+5:30)
+    # - cron: '0 4 * * 1-5'
+  workflow_dispatch:
+    
+jobs:
+  live-market-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run live_market.py
+        run: python live_market.py --alias NIFTY --IB 2>&1
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          if [ -n "$(git status --porcelain public/data/NIFTY.json)" ]; then
+            git add public/data/NIFTY.json
+            git commit -m "chore: auto-update NIFTY live market data" || true
+            git push
+          else
+            echo "No changes to commit"
+          fi
