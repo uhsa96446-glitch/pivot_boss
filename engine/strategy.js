@@ -67,63 +67,181 @@ export function buildState(data) {
         else if (relWidthPct > 0.6) cprWidthForecast = "WIDE (RANGE)";
     }
 
-    // PivotBoss 5-State Market Regime Classifier (§4, §5, §6–11, §12, §13, §22, §23, §24, §25, §42, §45)
+    // PivotBoss Dual-Bias Regime Engine (Macro 2-Day CPR + Micro Opening Action) §4, §5, §10, §11, §45
     const isOpenAboveH5 = pv.H5 && openPrice > pv.H5;
     const isOpenBelowL5 = pv.L5 && openPrice < pv.L5;
     const isGapUp = openClass === "OUT_ABOVE" || openClass === "OUTSIDE_ABOVE";
     const isGapDown = openClass === "OUT_BELOW" || openClass === "OUTSIDE_BELOW";
 
-    // Check 15m candle close vs prior day boundaries (PDH / PDL / VAH / VAL)
+    // 1. MACRO STRUCTURAL BIAS (2-Day CPR Relationship & Squeeze Analysis - §5)
+    const twoDay = data.two_day_relationship || "LOWER_VALUE";
+    const isHigherVal = twoDay === "HIGHER_VALUE" || twoDay === "OVERLAPPING_HIGHER";
+    const isLowerVal = twoDay === "LOWER_VALUE" || twoDay === "OVERLAPPING_LOWER";
+    const isInsideCPR = twoDay === "INSIDE";
+    const isNarrowCPR = cprWidthForecast.includes("NARROW");
+    const isWideCPR = cprWidthForecast.includes("WIDE");
+
+    let macroBias = "NEUTRAL";
+    if (isHigherVal) macroBias = "BULLISH";
+    else if (isLowerVal) macroBias = "BEARISH";
+    else if (isInsideCPR) macroBias = "COMPRESSION";
+
+    // 2. MICRO INTRADAY ACTION (15m Opening Acceptance vs Rejection - §10, §11)
     const pdh = p.high || 0;
     const pdl = p.low || 0;
     const candleClose = first15m?.close || close;
     const has15mClosed = Boolean(first15m && first15m.close);
 
-    // 15m Rejection vs Acceptance evaluation per Playbook §10, §11
     const is15mAcceptedAbovePDH = has15mClosed && candleClose > pdh;
     const is15mAcceptedBelowPDL = has15mClosed && candleClose < pdl;
     const is15mRejected = has15mClosed
         ? (isGapUp && candleClose < pdh) || (isGapDown && candleClose > pdl) || first15m.acceptance === "REJECTED" || first15m.acceptance === "INSIDE_VALUE"
         : false;
 
-    const isNarrowCPR = cprWidthForecast.includes("NARROW");
-    const isWideCPR = cprWidthForecast.includes("WIDE");
-    const twoDay = data.two_day_relationship || "LOWER_VALUE";
-    const isHigherVal = twoDay === "HIGHER_VALUE" || twoDay === "OVERLAPPING_HIGHER";
-    const isLowerVal = twoDay === "LOWER_VALUE" || twoDay === "OVERLAPPING_LOWER";
+    // 3. SYNTHESIZE REGIME — Exhaustive Macro × Micro Combination Matrix (§4, §5, §10, §11, §45)
+    //
+    // MACRO:  BULLISH | BEARISH | COMPRESSION | NEUTRAL
+    // MICRO:  GAP_UP_ACCEPTED | GAP_UP_REJECTED | GAP_DOWN_ACCEPTED | GAP_DOWN_REJECTED | IN_RANGE
+    //
+    // All 20 combinations are handled explicitly below, with WILD MOVE as priority override.
 
     let regime = "SIDEWAYS / BALANCED";
     let regimeTone = "yellow";
-    let regimeDesc = "Price is in equilibrium. Fade extremes (VAL/L3 to VAH/H3); avoid the middle.";
+    let regimeDesc = `Macro: ${macroBias} · Balanced Auction. Fade VAL/L3 & VAH/H3; avoid the middle.`;
 
+    // ── PRIORITY 0: Extreme Displacement Override (Wild Move) ──────────────────
     if (isOpenAboveH5 || isOpenBelowL5 || (hasGPZ && isNarrowCPR)) {
         regime = "WILD MOVE (HIGH VOLATILITY)";
         regimeTone = "purple";
-        regimeDesc = "Extreme volatility / gap shock. Reduce size; wait for IB establishment before entering.";
-    } else if ((isGapUp || is15mAcceptedAbovePDH) && !is15mRejected && (isNarrowCPR || aboveValue)) {
-        regime = "STRONG BULLISH (INITIATIVE)";
-        regimeTone = "green";
-        regimeDesc = "Initiative buyers confirmed (15m close > PDH). Buy VWAP / VAH / PDH pullbacks toward R2/R3/H5.";
-    } else if ((isGapDown || is15mAcceptedBelowPDL) && !is15mRejected && (isNarrowCPR || belowValue)) {
-        regime = "STRONG BEARISH (INITIATIVE)";
-        regimeTone = "red";
-        regimeDesc = "Initiative sellers confirmed (15m close < PDL). Sell VWAP / VAL / PDL rallies toward S2/S3/L5.";
-    } else if ((isGapDown && is15mRejected) || (isHigherVal && !belowValue)) {
-        regime = "SIDEWAYS TO BULLISH";
-        regimeTone = "green";
-        regimeDesc = is15mRejected && isGapDown
-            ? "Failed Gap Down confirmed (15m closed inside range). Bullish gap fill toward POC/VAH."
-            : "Accumulation / Bullish Bias. Buy lower-wick rejections at CPR / VAL / L3 support.";
-    } else if ((isGapUp && is15mRejected) || (isLowerVal && !aboveValue)) {
-        regime = "SIDEWAYS TO BEARISH";
-        regimeTone = "red";
-        regimeDesc = is15mRejected && isGapUp
-            ? "Failed Gap Up confirmed (15m closed inside range). Bearish gap fill toward POC/VAL."
-            : "Distribution / Bearish Bias. Sell upper-wick rejections at CPR / VAH / H3 resistance.";
-    } else if (isWideCPR || inValue) {
-        regime = "SIDEWAYS / BALANCED";
-        regimeTone = "yellow";
-        regimeDesc = "Balanced auction. Fade VAL/L3 & VAH/H3 extremes; strictly NO TRADE in middle.";
+        regimeDesc = `Macro: ${macroBias} · Micro: Open beyond H5/L5 (extreme shock). Reduce size 50%; wait for IB before entering.`;
+    }
+
+    // ── PRIORITY 1: GAP UP scenarios ───────────────────────────────────────────
+    // Micro: Gap Up Accepted (15m close > PDH) — Initiative Buy Breakout
+    else if (isGapUp && is15mAcceptedAbovePDH) {
+        if (macroBias === "BULLISH") {
+            regime = "STRONG BULLISH (INITIATIVE)";
+            regimeTone = "green";
+            regimeDesc = `Macro: Higher CPR (${twoDay}) + Micro: Gap Up Accepted. MAX BULLISH. Add on VWAP/PDH pullbacks. Targets: H4 → H5.`;
+        } else if (macroBias === "BEARISH") {
+            regime = "STRONG BULLISH (INITIATIVE)";
+            regimeTone = "green";
+            regimeDesc = `Macro: ${twoDay} BUT Micro: Gap Up Accepted overrides. §45 Conflict: Trust price behavior. Buy carefully; gap may be overdone. Targets: H3/VAH.`;
+        } else if (macroBias === "COMPRESSION") {
+            regime = "STRONG BULLISH (INITIATIVE)";
+            regimeTone = "green";
+            regimeDesc = `Macro: CPR Compression (Inside Day) · Micro: Gap Up Accepted — Compression breakout to upside. Targets: H4 → H5. Trailing stops only.`;
+        } else {
+            regime = "STRONG BULLISH (INITIATIVE)";
+            regimeTone = "green";
+            regimeDesc = `Macro: Neutral CPR · Micro: Gap Up Accepted. Buy VWAP/PDH pullbacks. Targets: H3 → H4 → R1.`;
+        }
+    }
+
+    // Micro: Gap Up Rejected (15m close < PDH) — Failed Gap, Bearish Reversal
+    else if (isGapUp && is15mRejected) {
+        if (macroBias === "BULLISH") {
+            regime = "SIDEWAYS TO BULLISH";
+            regimeTone = "green";
+            regimeDesc = `Macro: Higher CPR (${twoDay}) · Micro: Failed Gap Up. §45: Macro bias intact. Gap fill likely short-lived. Buy VAH/PDH support dips. Targets: POC → VAH.`;
+        } else if (macroBias === "BEARISH") {
+            regime = "SIDEWAYS TO BEARISH";
+            regimeTone = "red";
+            regimeDesc = `Macro: Lower CPR (${twoDay}) + Micro: Failed Gap Up confirmed. §45: Macro & Micro aligned bearish. Sell CPR/VAH rejections. Targets: POC → VAL → S1.`;
+        } else if (macroBias === "COMPRESSION") {
+            regime = "SIDEWAYS / BALANCED";
+            regimeTone = "yellow";
+            regimeDesc = `Macro: CPR Compression · Micro: Failed Gap Up. Compression still active. Range-bound between 2-day high/low. Fade extremes only.`;
+        } else {
+            regime = "SIDEWAYS TO BEARISH";
+            regimeTone = "red";
+            regimeDesc = `Macro: Neutral CPR · Micro: Failed Gap Up (gap fill in progress). Sell CPR/VAH. Targets: POC (${va.POC?.toFixed(1) || "—"}) → VAL.`;
+        }
+    }
+
+    // ── PRIORITY 2: GAP DOWN scenarios ─────────────────────────────────────────
+    // Micro: Gap Down Accepted (15m close < PDL) — Initiative Sell Breakdown
+    else if (isGapDown && is15mAcceptedBelowPDL) {
+        if (macroBias === "BEARISH") {
+            regime = "STRONG BEARISH (INITIATIVE)";
+            regimeTone = "red";
+            regimeDesc = `Macro: Lower CPR (${twoDay}) + Micro: Gap Down Accepted. MAX BEARISH. Sell VWAP/PDL rallies. Targets: L4 → L5 → S2.`;
+        } else if (macroBias === "BULLISH") {
+            regime = "STRONG BEARISH (INITIATIVE)";
+            regimeTone = "red";
+            regimeDesc = `Macro: ${twoDay} BUT Micro: Gap Down Accepted overrides. §45 Conflict: Trust price. Sell carefully; watch for V-bottom. Targets: L3/VAL.`;
+        } else if (macroBias === "COMPRESSION") {
+            regime = "STRONG BEARISH (INITIATIVE)";
+            regimeTone = "red";
+            regimeDesc = `Macro: CPR Compression · Micro: Gap Down Accepted — Compression breakdown to downside. Targets: L4 → L5. Trailing stops only.`;
+        } else {
+            regime = "STRONG BEARISH (INITIATIVE)";
+            regimeTone = "red";
+            regimeDesc = `Macro: Neutral CPR · Micro: Gap Down Accepted. Sell VWAP/PDL rallies. Targets: L3 → L4 → S1.`;
+        }
+    }
+
+    // Micro: Gap Down Rejected (15m close > PDL) — Failed Gap, Bullish Reversal
+    else if (isGapDown && is15mRejected) {
+        if (macroBias === "BULLISH") {
+            regime = "SIDEWAYS TO BULLISH";
+            regimeTone = "green";
+            regimeDesc = `Macro: Higher CPR (${twoDay}) + Micro: Failed Gap Down confirmed. §45: Both aligned bullish. Buy PDL/VAL support dip. Targets: POC (${va.POC?.toFixed(1) || "—"}) → VAH.`;
+        } else if (macroBias === "BEARISH") {
+            regime = "SIDEWAYS TO BULLISH";
+            regimeTone = "green";
+            regimeDesc = `Macro: Lower CPR (${twoDay}) but Micro: Failed Gap Down. §45 Conflict: Cautious gap-fill only. Targets: POC max. Reassess if POC rejected.`;
+        } else if (macroBias === "COMPRESSION") {
+            regime = "SIDEWAYS / BALANCED";
+            regimeTone = "yellow";
+            regimeDesc = `Macro: CPR Compression · Micro: Failed Gap Down. Compression holds. Range-bound. Fade 2-day high/low boundaries only.`;
+        } else {
+            regime = "SIDEWAYS TO BULLISH";
+            regimeTone = "green";
+            regimeDesc = `Macro: Neutral CPR · Micro: Failed Gap Down (in-range recovery). Buy PDL/VAL support. Targets: POC (${va.POC?.toFixed(1) || "—"}) → VAH.`;
+        }
+    }
+
+    // ── PRIORITY 3: IN-RANGE opens (no gap) ────────────────────────────────────
+    else {
+        const inRangeMicro = isNarrowCPR ? "Narrow CPR (trend compression — watch for breakout)"
+            : isWideCPR ? "Wide CPR (range bias — fade extremes)"
+                : "In-Range Open (balanced)";
+
+        if (macroBias === "BULLISH" && isNarrowCPR) {
+            regime = "SIDEWAYS TO BULLISH";
+            regimeTone = "green";
+            regimeDesc = `Macro: Higher CPR (${twoDay}) + Narrow CPR. Trend day setup if VAH breaks. Buy CPR/VAL pullbacks. Targets: VAH → H3 → R1.`;
+        } else if (macroBias === "BULLISH" && isWideCPR) {
+            regime = "SIDEWAYS TO BULLISH";
+            regimeTone = "green";
+            regimeDesc = `Macro: Higher CPR (${twoDay}) + Wide CPR (range bias). Responsive buyers at VAL/L3 extremes. Targets: POC → VAH. No chase.`;
+        } else if (macroBias === "BULLISH") {
+            regime = "SIDEWAYS TO BULLISH";
+            regimeTone = "green";
+            regimeDesc = `Macro: Higher CPR (${twoDay}) · ${inRangeMicro}. Buy lower-wick rejections at CPR / VAL / L3 support.`;
+        } else if (macroBias === "BEARISH" && isNarrowCPR) {
+            regime = "SIDEWAYS TO BEARISH";
+            regimeTone = "red";
+            regimeDesc = `Macro: Lower CPR (${twoDay}) + Narrow CPR. Trend day setup if VAL breaks. Sell CPR/VAH rally. Targets: VAL → L3 → S1.`;
+        } else if (macroBias === "BEARISH" && isWideCPR) {
+            regime = "SIDEWAYS TO BEARISH";
+            regimeTone = "red";
+            regimeDesc = `Macro: Lower CPR (${twoDay}) + Wide CPR (range bias). Responsive sellers at VAH/H3 extremes. Targets: POC → VAL. No chase.`;
+        } else if (macroBias === "BEARISH") {
+            regime = "SIDEWAYS TO BEARISH";
+            regimeTone = "red";
+            regimeDesc = `Macro: Lower CPR (${twoDay}) · ${inRangeMicro}. Sell upper-wick rejections at CPR / VAH / H3 resistance.`;
+        } else if (macroBias === "COMPRESSION") {
+            regime = "SIDEWAYS (CPR COMPRESSION)";
+            regimeTone = "yellow";
+            regimeDesc = `Macro: Inside CPR (Compression Day) · ${inRangeMicro}. High-volatility breakout imminent. Wait for 2-day high/low breach before trading.`;
+        } else {
+            // NEUTRAL macro + in-range micro
+            regime = isWideCPR ? "SIDEWAYS / BALANCED" : isNarrowCPR ? "SIDEWAYS (COMPRESSION WATCH)" : "SIDEWAYS / BALANCED";
+            regimeTone = "yellow";
+            regimeDesc = `Macro: Neutral CPR · ${inRangeMicro}. No structural bias. Fade VAL/L3 & VAH/H3 extremes only; strictly NO TRADE in the middle.`;
+        }
     }
 
     return {
