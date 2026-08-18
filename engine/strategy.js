@@ -9,6 +9,7 @@ export function buildState(data) {
 
     // Use live 15m close if available, else current session close, else previous close
     const close = first15m?.close || data.today_full?.close || p.close || 0;
+    const prevClose = p.close || 0;
     const openClass = data.opening_classification || "PENDING";
 
     const inValue = (close >= va.VAL && close <= va.VAH) || openClass === "IN_VALUE";
@@ -46,6 +47,7 @@ export function buildState(data) {
     return {
         p: { ...p, close },
         pv,
+        prevClose,
         va,
         pred,
         s,
