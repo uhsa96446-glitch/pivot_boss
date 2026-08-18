@@ -1091,7 +1091,7 @@ export default function Page() {
           </div>
         </div>
         <div className="topmeta">
-          <i aria-label="Live indicator" role="img" /> {sessionTag} </span>
+          <i aria-label="Live indicator" role="img" className={marketOpen ? "dot-open" : "dot-closed"} /> {sessionTag}</span>
         </div>
       </header>
 
