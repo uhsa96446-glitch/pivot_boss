@@ -64,26 +64,20 @@ def fetch_opening_candle_report(
     client: UpstoxClient,
     symbol: str,
     target_date_str: str,
+    num_minutes: int = 15,
 ) -> dict:
     """
-    Fetch opening price + first 15-minute candle OHLC for a given trading day.
-
-    For a completed session: 1-minute candles are available via historical endpoint.
-    For today's live session: the first completed 1-minute candle gives the open;
-    if not yet available, falls back to real-time LTP as approximate open.
+    Fetch opening price + opening candle OHLC for a given trading day.
 
     Args:
         client: Authenticated UpstoxClient.
         symbol: Full Upstox instrument key (e.g. "NSE_INDEX|Nifty 50").
         target_date_str: YYYY-MM-DD of the trading session.
+        num_minutes: Minutes to aggregate (15 for 15-min candle, 60 for Initial Balance).
     """
-    # ── 1-minute candles from 09:15 onwards ──
-    # Use V3 intraday endpoint for today's session; V2 historical for past sessions.
-    # V2 historical endpoint doesn't return today's completed candles.
     today_str = datetime.now(IST).strftime("%Y-%m-%d")
     try:
         if target_date_str == today_str:
-            # V3 intraday: current trading day only, returns candles descending (sorted ascending by client)
             encoded = _url_quote(symbol, safe="")
             url = f"{_V3_URL}/historical-candle/intraday/{encoded}/minutes/1"
             resp = client._request_with_retry("GET", url)
@@ -100,7 +94,6 @@ def fetch_opening_candle_report(
                     })
             intraday.sort(key=lambda x: x["timestamp"])
         else:
-            # V2 historical for completed past sessions
             intraday = pivot_boss.fetch_intraday_ohlc(
                 client, symbol, target_date_str, interval="1minute"
             )
@@ -108,23 +101,20 @@ def fetch_opening_candle_report(
         sys.stderr.write(f"[WARN] Intraday fetch failed: {e}\n")
         intraday = []
 
-    # First candle is 09:15 — its open = session open price; collect first 15 candles (09:15 → 09:30)
-    first_15_candles = intraday[:15] if intraday else []
+    # Collect required number of 1-minute candles (15m or 60m IB)
+    selected_candles = intraday[:num_minutes] if intraday else []
 
-    first_15m_ohlc = None
-    if first_15_candles:
-        first_15m_ohlc = {
-            "open": round(float(first_15_candles[0]["open"]), 2),
-            "high": round(float(max(b["high"] for b in first_15_candles)), 2),
-            "low": round(float(min(b["low"] for b in first_15_candles)), 2),
-            "close": round(float(first_15_candles[-1]["close"]), 2),
-            "volume": sum(b.get("volume", 0) for b in first_15_candles),
+    ohlc = None
+    if selected_candles:
+        ohlc = {
+            "open": round(float(selected_candles[0]["open"]), 2),
+            "high": round(float(max(b["high"] for b in selected_candles)), 2),
+            "low": round(float(min(b["low"] for b in selected_candles)), 2),
+            "close": round(float(selected_candles[-1]["close"]), 2),
+            "volume": sum(b.get("volume", 0) for b in selected_candles),
+            "count": len(selected_candles),
         }
     else:
-        # No 1-minute candles for this date — could be:
-        # 1. Today's session just started (first candle not closed yet)
-        # 2. After-hours / next-day pre-market
-        # Fall back to real-time spot LTP as approximate open
         open_price = None
         try:
             ltp = client.get_spot_price(symbol)
@@ -132,21 +122,22 @@ def fetch_opening_candle_report(
                 open_price = round(float(ltp), 2)
         except Exception:
             pass
-        first_15m_ohlc = {
+        ohlc = {
             "open": open_price,
             "high": open_price,
             "low": open_price,
             "close": open_price,
             "volume": 0,
+            "count": 0,
             "status": "PENDING_CANDLES",
-            "note": "Candles for this session not yet available. Using spot LTP as approximate open.",
+            "note": "Candles for this session not yet available.",
         }
 
     return {
         "date": target_date_str,
         "symbol": symbol,
-        "open": first_15m_ohlc["open"],
-        "first_15min": first_15m_ohlc,
+        "open": ohlc["open"],
+        "ohlc": ohlc,
     }
 
 
@@ -164,18 +155,14 @@ def _resolve_target_date(today: datetime, holidays: list[str]) -> tuple[str, str
     """
     today_str = today.strftime("%Y-%m-%d")
     is_trading_day = _is_trading_day(today, holidays)
-    # Ensure we're working in IST timezone
     import pytz
     ist = pytz.timezone("Asia/Kolkata")
     ist_now = today if today.tzinfo else ist.localize(today)
 
-    # First 15-min candle closes at 09:30 IST — only consider today "live" after that
     is_after_0930 = ist_now.hour >= 10 or (ist_now.hour == 9 and ist_now.minute >= 30)
     if is_trading_day and is_after_0930:
-        # Session in progress — today's data
         return today_str, "today_live"
     else:
-        # Step back to most recent completed trading day
         d = today - timedelta(days=1)
         while not _is_trading_day(d, holidays):
             d -= timedelta(days=1)
@@ -184,10 +171,11 @@ def _resolve_target_date(today: datetime, holidays: list[str]) -> tuple[str, str
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Fetch opening + first 15-min candle OHLC for the current or last trading session"
+        description="Fetch opening + first 15-min candle or Initial Balance (IB) OHLC for current/last session"
     )
     parser.add_argument("--alias", default=None, help="Index alias: NIFTY, BANKNIFTY, FINNIFTY, MIDCAP")
     parser.add_argument("--symbol", default=None, help="Full Upstox key or bare trading name (e.g. 'RELIANCE')")
+    parser.add_argument("--IB", "--ib", action="store_true", help="Fetch first 1 hour (09:15-10:15 IST) Initial Balance data")
     parser.add_argument("--dry-run", action="store_true", help="Print resolved dates/keys without fetching data")
     args = parser.parse_args()
 
@@ -238,22 +226,21 @@ def main():
         print(f"[ERROR] Upstox client init failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # ── Fetch opening candle data ──
+    # ── Fetch candle data ──
+    num_minutes = 60 if args.IB else 15
     try:
-        live_data = fetch_opening_candle_report(client, symbol, target_date_str)
+        live_data = fetch_opening_candle_report(client, symbol, target_date_str, num_minutes=num_minutes)
     except Exception as e:
         print(f"[ERROR] Fetch failed: {e}", file=sys.stderr)
         sys.exit(1)
 
     # ── Resolve output filename dynamically ──
-    # Reverse-map from INSTRUMENT_KEYS for known indices; use original input name for stocks.
     _rev_map = {v: k for k, v in INSTRUMENT_KEYS.items()}
     if args.alias:
         alias = args.alias.upper()
     elif symbol in _rev_map:
         alias = _rev_map[symbol]
     elif "|" in symbol_input:
-        # Arbitrary full key passed by user (e.g. "NSE_EQ|INE040A01016") — use trading name if resolvable
         alias = pivot_boss._alias_from_symbol(symbol) if hasattr(pivot_boss, "_alias_from_symbol") else symbol.split("|")[-1][:20].replace(" ", "_").upper()
     else:
         alias = symbol_input.upper().replace(" ", "_")[:20]
@@ -261,7 +248,6 @@ def main():
     _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Merge into existing NIFTY.json / BANKNIFTY.json etc. ──
-    # Preserve all PivotBoss fields; update only opening_classification + first_15m_candle.
     existing = {}
     if output_path.exists():
         try:
@@ -270,20 +256,18 @@ def main():
         except Exception:
             existing = {}
 
-    # Compute opening_classification
     open_price = live_data.get("open")
-    first_15m = live_data.get("first_15min")
+    candle_ohlc = live_data.get("ohlc")
     classification = "PENDING"
 
-    # Guard: if open_price is None (spot LTP fetch failed), skip classification
     if open_price is not None and existing.get("previous_session"):
         pdh = existing["previous_session"].get("high", 0)
         pdl = existing["previous_session"].get("low", 0)
         vah = existing.get("value_area", {}).get("VAH", 0)
         val = existing.get("value_area", {}).get("VAL", 0)
-        if open_price >= pdh:
+        if open_price > pdh:
             classification = "OUT_ABOVE"
-        elif open_price <= pdl:
+        elif open_price < pdl:
             classification = "OUT_BELOW"
         elif open_price > vah:
             classification = "ABOVE_VALUE"
@@ -292,45 +276,56 @@ def main():
         elif pdl <= open_price <= pdh and val <= open_price <= vah:
             classification = "IN_VALUE"
 
-    # Build first_15m_candle — null before first candle closes, OHLC + type + acceptance after
-    first_15m_candle = None
-    if first_15m and "status" not in first_15m:
-        _o = first_15m.get("open"); _h = first_15m.get("high"); _l = first_15m.get("low"); _c = first_15m.get("close")
-        # Guard: skip if any OHLC value is None (spot LTP fallback failed)
+    processed_candle = None
+    if candle_ohlc and "status" not in candle_ohlc:
+        _o = candle_ohlc.get("open"); _h = candle_ohlc.get("high"); _l = candle_ohlc.get("low"); _c = candle_ohlc.get("close")
         if _o is not None and _h is not None and _l is not None and _c is not None:
             _vah = existing.get("value_area", {}).get("VAH", 0) if existing else 0
             _val = existing.get("value_area", {}).get("VAL", 0) if existing else 0
-            # Candle type: BULLISH (close > open), BEARISH (close < open), DOJI (real body < 10% of range)
+            _pdh = existing.get("previous_session", {}).get("high", 0) if existing else 0
+            _pdl = existing.get("previous_session", {}).get("low", 0) if existing else 0
+
             _body = abs(_c - _o)
             _rng = _h - _l
             if _rng == 0 or (_body / _rng) < 0.10:
                 _ctype = "DOJI"
             elif _c > _o: _ctype = "BULLISH"
             else: _ctype = "BEARISH"
-            # Acceptance: where close lands relative to value area
-            if _c > _vah: _acc = "ABOVE_VALUE"
+
+            # Acceptance / Rejection evaluation per Playbook §10, §11, §13
+            if classification == "OUT_ABOVE":
+                _acc = "REJECTED" if _c < _pdh else "ACCEPTED_OUTSIDE"
+            elif classification == "OUT_BELOW":
+                _acc = "REJECTED" if _c > _pdl else "ACCEPTED_OUTSIDE"
+            elif _c > _vah: _acc = "ABOVE_VALUE"
             elif _c < _val: _acc = "BELOW_VALUE"
             else: _acc = "INSIDE_VALUE"
-            first_15m_candle = {
+
+            processed_candle = {
                 "open": _o,
                 "high": _h,
                 "low": _l,
                 "close": _c,
-                "volume": first_15m.get("volume", 0),
+                "volume": candle_ohlc.get("volume", 0),
                 "type": _ctype,
                 "acceptance": _acc,
             }
-    elif first_15m and first_15m.get("status") == "PENDING_CANDLES":
-        first_15m_candle = None  # pre-market — not yet available
 
-    # Merge
+            if args.IB:
+                processed_candle["range"] = round(_h - _l, 2)
+                processed_candle["width_type"] = "NARROW_IB" if (_h - _l) / (_c or 1) * 100 < 0.5 else "WIDE_IB"
+
     existing["opening_classification"] = classification
-    existing["first_15m_candle"] = first_15m_candle
+
+    if args.IB:
+        existing["initial_balance"] = processed_candle
+    else:
+        existing["first_15m_candle"] = processed_candle
 
     output_json = json.dumps(existing, indent=2)
     with open(output_path, "w") as f:
         f.write(output_json)
-    print(f"[INFO] Merged live data into {output_path}", file=sys.stderr)
+    print(f"[INFO] Merged {'IB (1-Hour)' if args.IB else '15-min'} live data into {output_path}", file=sys.stderr)
 
     # print(output_json)
 
