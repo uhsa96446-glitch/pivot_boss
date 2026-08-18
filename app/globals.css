@@ -68,7 +68,7 @@ button {
 
 .brand span {
   display: block;
-  font: 8px var(--font-dm-mono);
+  font: 10px var(--font-dm-mono);
   letter-spacing: 0.16em;
   color: #777e8b;
   margin-top: 2px;
