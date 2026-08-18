@@ -407,11 +407,19 @@ function Scenarios({ st, data }) {
   const candleData = ib || first15m;
   const is15mRejected = candleData?.acceptance === "REJECTED" || candleData?.acceptance === "INSIDE_VALUE";
 
+  // Determine CPR Pullback candidates
+  const isHigherValue = st.twoDayRel === "HIGHER_VALUE" || st.twoDayRel === "OVERLAPPING_HIGHER";
+  const isLowerValue = st.twoDayRel === "LOWER_VALUE" || st.twoDayRel === "OVERLAPPING_LOWER";
+  const isPullbackToCPR = candleData && (candleData.low <= (st.pv?.CPR_TOP || 0) && candleData.high >= (st.pv?.CPR_BOTTOM || 0));
+
   let activeCaseKey = null;
   if (st.twoDayRel === "INSIDE") activeCaseKey = "case_g_inside_day";
   else if (isGapUp && is15mRejected) activeCaseKey = "case_d_gap_reversal";
   else if (isGapDown && is15mRejected) activeCaseKey = "case_e_gap_reversal";
+  else if (isHigherValue && isPullbackToCPR) activeCaseKey = "case_f_cpr_bullish_pullback";
+  else if (isLowerValue && isPullbackToCPR) activeCaseKey = "case_f2_cpr_bearish_pullback";
   else if (st.cprWidthForecast?.includes("NARROW") && (isGapUp || isGapDown)) activeCaseKey = "case_h_double_distribution";
+  else if (candleData && (candleData.close >= (st.pv?.R1 || Infinity) || candleData.close <= (st.pv?.S1 || -Infinity))) activeCaseKey = "case_i_pivot_breakout_ladder";
   else if (openClass === "IN_VALUE" || openClass === "IN_RANGE_IN_VALUE") activeCaseKey = "case_a_in_range_in_value";
   else if (openClass === "ABOVE_VALUE" || openClass === "IN_RANGE_ABOVE_VALUE") activeCaseKey = "case_b_in_range_above_value";
   else if (openClass === "BELOW_VALUE" || openClass === "IN_RANGE_BELOW_VALUE") activeCaseKey = "case_c_in_range_below_value";
@@ -476,14 +484,16 @@ function Scenarios({ st, data }) {
     }, "neutral", "case_g_inside_day"],
     ["CASE H · DOUBLE DISTRIBUTION TREND DAY", {
       condition: "NARROW_CPR AND RANGE_EXTENSION",
-      bias: "BULLISH",
+      bias: isGapDown ? "BEARISH" : "BULLISH",
       primary: `Narrow CPR (${st.cprWidthForecast}) + Initiative Range Extension away from value → Follow trend direction without fading`,
-      primary_target: `R2 (${st.pv?.R2?.toFixed(1) || "—"}) → R3 (${st.pv?.R3?.toFixed(1) || "—"}) → H5 (${st.pv?.H5?.toFixed(1) || "—"})`,
+      primary_target: isGapDown
+        ? `S2 (${st.pv?.S2?.toFixed(1) || "—"}) → S3 (${st.pv?.S3?.toFixed(1) || "—"}) → L5 (${st.pv?.L5?.toFixed(1) || "—"})`
+        : `R2 (${st.pv?.R2?.toFixed(1) || "—"}) → R3 (${st.pv?.R3?.toFixed(1) || "—"}) → H5 (${st.pv?.H5?.toFixed(1) || "—"})`,
       contingency: "If range extension fails and price returns to Initial Balance → Exit Trend Position",
       contingency_target: `POC (${st.va?.POC?.toFixed(1) || "—"})`,
       failure: "Initiative buyers/sellers lose momentum",
       no_trade: "Never fade a confirmed Double Distribution Trend Day"
-    }, "green", "case_h_double_distribution"],
+    }, isGapDown ? "red" : "green", "case_h_double_distribution"],
     ["CASE I · FLOOR PIVOT BREAKOUT LADDER", {
       condition: "R1_OR_S1_BREAKOUT",
       bias: "NEUTRAL",
