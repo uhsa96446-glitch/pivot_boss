@@ -993,12 +993,14 @@ export default function Page() {
   const [tab, setTab] = useState("overview");
 
   useEffect(() => {
-    const controller = new AbortController();
+    let aborted = false;
+    let interval = null;
 
     const fetchLive = () => {
-      fetch("/api/nifty", { signal: controller.signal })
+      fetch("/api/nifty")
         .then((r) => r.json())
         .then((res) => {
+          if (aborted) return;
           if (res.success) {
             setLiveData(res);
             setLiveError(false);
@@ -1010,7 +1012,7 @@ export default function Page() {
         })
         .catch((err) => {
           // Ignore abort errors, handle real network/timeout errors
-          if (err.name === "AbortError") return;
+          if (err.name === "AbortError" || aborted) return;
           setLiveError(true);
           setLivePending(false);
         });
@@ -1035,13 +1037,15 @@ export default function Page() {
     };
 
     // Only set up polling if market is currently open
-    let interval = null;
     if (isMarketOpen()) {
       interval = setInterval(fetchLive, 10000); // 10 seconds during market hours
     }
     // else: already fetched once above, no polling outside market hours
 
-    return () => { if (interval) clearInterval(interval); controller.abort(); };
+    return () => {
+      aborted = true;
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   const st = useMemo(() => (data ? buildState(data) : null), [data]);
