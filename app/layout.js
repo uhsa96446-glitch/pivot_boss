@@ -1,4 +1,19 @@
 import "./globals.css";
+import { DM_Mono, Manrope } from "next/font/google";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-dm-mono",
+  display: "swap",
+});
 
 export const viewport = {
     themeColor: "#08090c",
@@ -30,7 +45,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="en">
+        <html lang="en" className={`${manrope.variable} ${dmMono.variable}`}>
             <head>
                 <meta name="description" content="Real-time strategy-driven Market Profile and Central Pivot Range (CPR) decision engine for NIFTY 50 trading based on PivotBoss framework." />
                 <title>Pivot-Boss — Strategy-Driven Market Profile & CPR Dashboard</title>

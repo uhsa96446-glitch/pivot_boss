@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
   --bg: #08090c;
@@ -23,7 +22,7 @@ body {
   margin: 0;
   background: radial-gradient(circle at 78% -10%, #1d202d 0, #08090c 34%);
   color: var(--text);
-  font-family: Manrope, system-ui, sans-serif;
+  font-family: var(--font-manrope), system-ui, sans-serif;
 }
 
 button {
@@ -68,14 +67,14 @@ button {
 
 .brand span {
   display: block;
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   letter-spacing: 0.16em;
   color: #777e8b;
   margin-top: 2px;
 }
 
 .topmeta {
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   color: #737a86;
   letter-spacing: 0.08em;
   display: flex;
@@ -142,7 +141,7 @@ button {
 }
 
 .live-label {
-  font: 600 10px "DM Mono";
+  font: 600 10px var(--font-dm-mono);
   color: #707784;
   letter-spacing: 0.12em;
 }
@@ -164,7 +163,7 @@ button {
 .live-change-tag {
   padding: 4px 8px;
   border-radius: 6px;
-  font: 600 11px "DM Mono";
+  font: 600 11px var(--font-dm-mono);
 }
 
 .green-bg {
@@ -190,7 +189,7 @@ button {
 }
 
 .ohlc-item span {
-  font: 500 9px "DM Mono";
+  font: 500 9px var(--font-dm-mono);
   color: #707784;
   letter-spacing: 0.08em;
 }
@@ -228,7 +227,7 @@ button {
 }
 
 .eyebrow {
-  font: 500 9px "DM Mono";
+  font: 500 9px var(--font-dm-mono);
   color: #707784;
   letter-spacing: 0.14em;
 }
@@ -261,7 +260,7 @@ button {
 .close span,
 .close small {
   display: block;
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   color: #747b87;
   letter-spacing: 0.1em;
 }
@@ -287,7 +286,7 @@ button {
   padding: 13px 18px 12px;
   color: #737a86;
   text-transform: uppercase;
-  font: 500 10px "DM Mono";
+  font: 500 10px var(--font-dm-mono);
   letter-spacing: 0.12em;
   cursor: pointer;
   position: relative;
@@ -357,7 +356,7 @@ button {
 
 .tiny,
 .badge {
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   border: 1px solid #30343e;
   border-radius: 999px;
   padding: 6px 10px;
@@ -492,7 +491,7 @@ button {
 .values span,
 .ohlc span {
   display: block;
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   color: #94a3b8;
 }
 
@@ -501,7 +500,7 @@ button {
 .values b,
 .ohlc b {
   display: block;
-  font: 500 11px "DM Mono";
+  font: 500 11px var(--font-dm-mono);
   margin-top: 6px;
 }
 
@@ -598,7 +597,7 @@ button {
 .valuebar-label {
   display: flex;
   justify-content: space-between;
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   color: #94a3b8;
   margin-top: 10px;
 }
@@ -636,18 +635,18 @@ button {
 }
 
 .level-name {
-  font: 600 10px "DM Mono";
+  font: 600 10px var(--font-dm-mono);
 }
 
 .level-val {
-  font: 600 11px "DM Mono";
+  font: 600 11px var(--font-dm-mono);
   text-align: right;
 }
 
 .level-desc {
   grid-column: 1 / -1;
   color: #94a3b8;
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   margin-top: -8px;
   padding-left: 64px;
 }
@@ -718,12 +717,12 @@ button {
 }
 
 .kv span {
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   color: #94a3b8;
 }
 
 .kv b {
-  font: 500 11px "DM Mono";
+  font: 500 11px var(--font-dm-mono);
   text-align: right;
 }
 
@@ -737,7 +736,7 @@ button {
 .questions b {
   display: block;
   color: #94a3b8;
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
 }
 
 .questions strong {
@@ -764,7 +763,7 @@ button {
 
 .engine span,
 .engine strong {
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   padding: 8px 12px;
   border: 1px solid #292d35;
   border-radius: 7px;
@@ -772,7 +771,7 @@ button {
 }
 
 .engine i {
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   color: #555d68;
 }
 
@@ -792,7 +791,7 @@ button {
   flex: 1;
   text-align: center;
   color: #777e8b;
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
 }
 
 .hot {
@@ -866,7 +865,7 @@ button {
 }
 
 .regime-participant {
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   color: #737a86;
   letter-spacing: 0.1em;
   display: flex;
@@ -899,7 +898,7 @@ button {
   color: #8b92a0;
   padding: 6px 14px;
   border-radius: 8px;
-  font: 500 10px "DM Mono";
+  font: 500 10px var(--font-dm-mono);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -935,7 +934,7 @@ button {
 }
 
 .flow-step-num {
-  font: 700 9px "DM Mono";
+  font: 700 9px var(--font-dm-mono);
   color: #3b82f6;
   letter-spacing: 0.1em;
   display: block;
@@ -961,7 +960,7 @@ button {
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid #222632;
-  font: 600 11px "DM Mono";
+  font: 600 11px var(--font-dm-mono);
   letter-spacing: 0.05em;
   color: #fff;
 }
@@ -989,7 +988,7 @@ button {
 }
 
 .trigger-item-enhanced b {
-  font: 600 11px "DM Mono";
+  font: 600 11px var(--font-dm-mono);
   color: #f3f4f6;
 }
 
@@ -999,13 +998,13 @@ button {
 }
 
 .trigger-item-enhanced em {
-  font: 600 10px "DM Mono";
+  font: 600 10px var(--font-dm-mono);
   color: #7df7b5;
   font-style: normal;
 }
 
 .trigger-item-enhanced .pts-badge {
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   color: #38bdf8;
   background: #0369a11f;
   padding: 2px 6px;
@@ -1036,20 +1035,20 @@ button {
 
 .hotgrid span {
   display: block;
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   color: #94a3b8;
 }
 
 .hotgrid b {
   display: block;
-  font: 500 11px "DM Mono";
+  font: 500 11px var(--font-dm-mono);
   margin: 8px 0;
   letter-spacing: -0.02em;
 }
 
 .hotgrid small {
   color: #94a3b8;
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
 }
 
 .hotrule {
@@ -1058,7 +1057,7 @@ button {
   flex-wrap: wrap;
   margin-top: 18px;
   color: #94a3b8;
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   padding-top: 12px;
   border-top: 1px solid #242730;
 }
@@ -1106,7 +1105,7 @@ button {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  font: 500 9px "DM Mono";
+  font: 500 9px var(--font-dm-mono);
   color: #94a3b8;
   padding-bottom: 10px;
   border-bottom: 1px solid #242730;
@@ -1125,7 +1124,7 @@ button {
 }
 
 .cond-explain {
-  font: 500 11px "DM Mono";
+  font: 500 11px var(--font-dm-mono);
   color: #7df7b5;
   line-height: 1.4;
 }
@@ -1146,13 +1145,13 @@ button {
 }
 
 .scenario-footer-item .label {
-  font: 600 8px "DM Mono";
+  font: 600 8px var(--font-dm-mono);
   color: #737a86;
   letter-spacing: 0.08em;
 }
 
 .scenario-footer-item p {
-  font: 10px "DM Mono";
+  font: 10px var(--font-dm-mono);
   color: #e2e8f0;
   margin: 0;
   line-height: 1.4;
@@ -1177,7 +1176,7 @@ button {
 
 .scenario-section .label {
   display: block;
-  font: 600 8px "DM Mono";
+  font: 600 8px var(--font-dm-mono);
   color: #737a86;
   letter-spacing: 0.1em;
   margin-bottom: 4px;
@@ -1194,7 +1193,7 @@ button {
   display: flex;
   gap: 8px;
   align-items: center;
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
   padding-top: 6px;
   border-top: 1px dashed #282c38;
 }
@@ -1247,7 +1246,7 @@ button {
 }
 
 .layer-card .layer-num {
-  font: 600 9px "DM Mono";
+  font: 600 9px var(--font-dm-mono);
   color: #737a86;
   letter-spacing: 0.12em;
 }
@@ -1261,7 +1260,7 @@ button {
 .layer-card ul {
   margin: 0;
   padding: 0 0 0 16px;
-  font: 10px "DM Mono";
+  font: 10px var(--font-dm-mono);
   color: #a0a6b0;
   line-height: 1.7;
 }
@@ -1313,7 +1312,7 @@ button {
 .setup-row {
   display: flex;
   justify-content: space-between;
-  font: 9px "DM Mono";
+  font: 9px var(--font-dm-mono);
 }
 
 .setup-row span {
@@ -1360,7 +1359,7 @@ button {
   border: 1px solid #f59e0b44;
   padding: 4px 10px;
   border-radius: 999px;
-  font: 600 9px "DM Mono";
+  font: 600 9px var(--font-dm-mono);
   margin-top: 8px;
 }
 
@@ -1387,7 +1386,7 @@ button {
 
 .trigger b,
 .trigger em {
-  font: 500 10px "DM Mono";
+  font: 500 10px var(--font-dm-mono);
 }
 
 .trigger span {
@@ -1402,7 +1401,7 @@ button {
 }
 
 .cardhead {
-  font: 600 10px "DM Mono";
+  font: 600 10px var(--font-dm-mono);
   color: #7a818d;
   letter-spacing: 0.1em;
   margin-bottom: 12px;
@@ -1437,7 +1436,7 @@ button {
 }
 
 .pivot-group-title {
-  font: 600 10px "DM Mono";
+  font: 600 10px var(--font-dm-mono);
   color: #7a818d;
   letter-spacing: 0.1em;
   margin-top: 16px;
@@ -1458,7 +1457,7 @@ button {
   justify-content: space-between;
   border-bottom: 1px solid #242730;
   padding: 10px 0;
-  font: 11px "DM Mono";
+  font: 11px var(--font-dm-mono);
 }
 
 .tr:last-child {
@@ -1510,7 +1509,7 @@ button {
 .meter-label {
   display: flex;
   justify-content: space-between;
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   color: #777e8b;
   margin-top: 10px;
 }
@@ -1519,7 +1518,7 @@ footer {
   display: flex;
   justify-content: space-between;
   color: #555d68;
-  font: 8px "DM Mono";
+  font: 8px var(--font-dm-mono);
   padding: 32px 2px 10px;
   margin-top: 20px;
   border-top: 1px solid #1a1d26;
@@ -1530,7 +1529,7 @@ footer {
   display: grid;
   place-items: center;
   color: #777;
-  font: 10px "DM Mono";
+  font: 10px var(--font-dm-mono);
 }
 
 @media (max-width: 950px) {
