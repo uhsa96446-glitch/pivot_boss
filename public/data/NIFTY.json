@@ -43,9 +43,17 @@
     "method": "futures_volume_profile"
   },
   "next_trading_day": "2026-08-18",
-  "opening_classification": "PENDING",
+  "opening_classification": "OUT_BELOW",
   "two_day_relationship": "LOWER_VALUE",
-  "first_15m_candle": null,
+  "first_15m_candle": {
+    "open": 24223.85,
+    "high": 24269.65,
+    "low": 24211.1,
+    "close": 24245.1,
+    "volume": 0,
+    "type": "BULLISH",
+    "acceptance": "INSIDE_VALUE"
+  },
   "today_full": {},
   "predictions": {
     "day_type": {
