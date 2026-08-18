@@ -818,6 +818,67 @@ button {
   color: #fff;
 }
 
+.regime-banner {
+  background: linear-gradient(145deg, #16181fdd, #0d0f13dd);
+  border: 1px solid var(--line);
+  border-left: 4px solid #3b82f6;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 20px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.regime-green {
+  border-left-color: var(--green);
+  background: linear-gradient(145deg, #11261d, #0a1214);
+}
+
+.regime-red {
+  border-left-color: var(--red);
+  background: linear-gradient(145deg, #2a0e10, #160d0e);
+}
+
+.regime-yellow {
+  border-left-color: var(--yellow);
+  background: linear-gradient(145deg, #201d0f, #11120a);
+}
+
+.regime-purple {
+  border-left-color: #a78bfa;
+  background: linear-gradient(145deg, #180f24, #0f0b16);
+}
+
+.regime-banner-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.regime-banner p {
+  font-size: 11px;
+  color: #e2e8f0;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.regime-participant {
+  font: 8px "DM Mono";
+  color: #737a86;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.regime-participant i {
+  font-size: 6px;
+  color: var(--yellow);
+}
+
 .active-scenario-banner p {
   font-size: 11px;
   color: #94a3b8;

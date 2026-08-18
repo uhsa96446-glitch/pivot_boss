@@ -67,14 +67,31 @@ function Action({ st }) {
           <b>{st.camOpenClass}</b>
         </div>
       </div>
-      <div className="beginner">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-          <b>MARKET REGIME</b>
-          <Badge tone={st.regimeTone}>{st.regime}</Badge>
-        </div>
-        <span>{st.regimeDesc}</span>
-      </div>
     </Card>
+  );
+}
+
+// RegimeBanner — moved from Action to Scenarios tab (overview removed it)
+function RegimeBanner({ st }) {
+  const regimeClass =
+    st.regimeTone === "green" ? "regime-green" :
+    st.regimeTone === "red" ? "regime-red" :
+    st.regimeTone === "purple" ? "regime-purple" :
+    "regime-yellow";
+
+  return (
+    <div className={`regime-banner ${regimeClass}`}>
+      <div className="regime-banner-top">
+        <span className="eyebrow">MARKET REGIME</span>
+        <Badge tone={st.regimeTone}>{st.regime}</Badge>
+      </div>
+      <p className="regime-desc">{st.regimeDesc}</p>
+      {st.participant && (
+        <div className="regime-participant">
+          <i>●</i> {st.participant}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -578,6 +595,7 @@ function Scenarios({ st, data, ltp }) {
         </Badge>
       </div>
 
+      <RegimeBanner st={st} />
 
       <div className="intro">
         <div>
