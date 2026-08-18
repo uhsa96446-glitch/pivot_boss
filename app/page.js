@@ -68,8 +68,11 @@ function Action({ st }) {
         </div>
       </div>
       <div className="beginner">
-        <b>Beginner rule</b>
-        <span>Context + location + price behavior must align. If they do not, WAIT.</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+          <b>MARKET REGIME</b>
+          <Badge tone={st.regimeTone}>{st.regime}</Badge>
+        </div>
+        <span>{st.regimeDesc}</span>
       </div>
     </Card>
   );
