@@ -832,18 +832,22 @@ button {
 
 .regime-green {
   border-left-color: var(--green);
+  background: linear-gradient(145deg, #11261d, #0a1214);
 }
 
 .regime-red {
   border-left-color: var(--red);
+  background: linear-gradient(145deg, #2a0e10, #160d0e);
 }
 
 .regime-yellow {
   border-left-color: var(--yellow);
+  background: linear-gradient(145deg, #201d0f, #11120a);
 }
 
 .regime-purple {
   border-left-color: #a78bfa;
+  background: linear-gradient(145deg, #180f24, #0f0b16);
 }
 
 .regime-banner-top {
