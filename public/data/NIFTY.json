@@ -1,59 +1,51 @@
 {
   "symbol": "NSE_INDEX|Nifty 50",
   "previous_session": {
-    "date": "2026-08-17T00:00:00+05:30",
-    "open": 24343.45,
-    "high": 24360.1,
-    "low": 24226.95,
-    "close": 24287.65,
+    "date": "2026-08-18",
+    "open": 24223.85,
+    "high": 24269.65,
+    "low": 24154.9,
+    "close": 24154.9,
     "volume": 0,
     "oi": 0
   },
   "pivots": {
-    "P": 24291.57,
-    "BC": 24293.53,
-    "TC": 24289.61,
-    "CPR_TOP": 24293.53,
-    "CPR_BOTTOM": 24289.61,
-    "CPR_WIDTH": 3.9167,
-    "R1": 24356.18,
-    "R2": 24424.72,
-    "R3": 24489.33,
-    "S1": 24223.03,
-    "S2": 24158.42,
-    "S3": 24089.88,
-    "H1": 24299.86,
-    "H2": 24312.06,
-    "H3": 24324.27,
-    "H4": 24360.88,
-    "H5": 24421.13,
-    "L1": 24275.44,
-    "L2": 24263.24,
-    "L3": 24251.03,
-    "L4": 24214.42,
-    "L5": 24154.17,
-    "RANGE": 133.15,
-    "CAM_WIDTH": 73.23
+    "P": 24193.15,
+    "BC": 24212.28,
+    "TC": 24174.03,
+    "CPR_TOP": 24212.28,
+    "CPR_BOTTOM": 24174.03,
+    "CPR_WIDTH": 38.25,
+    "R1": 24231.4,
+    "R2": 24307.9,
+    "R3": 24346.15,
+    "S1": 24116.65,
+    "S2": 24078.4,
+    "S3": 24001.9,
+    "H1": 24165.42,
+    "H2": 24175.94,
+    "H3": 24186.46,
+    "H4": 24218.01,
+    "H5": 24269.65,
+    "L1": 24144.38,
+    "L2": 24133.86,
+    "L3": 24123.34,
+    "L4": 24091.79,
+    "L5": 24040.15,
+    "RANGE": 114.75,
+    "CAM_WIDTH": 63.11
   },
   "value_area": {
-    "VAH": 24326.0,
-    "POC": 24290.0,
-    "VAL": 24230.0,
-    "VALUE_WIDTH": 96.0,
+    "VAH": 24264.0,
+    "POC": 24220.0,
+    "VAL": 24200.0,
+    "VALUE_WIDTH": 64.0,
     "method": "futures_volume_profile"
   },
-  "next_trading_day": "2026-08-18",
-  "opening_classification": "OUT_BELOW",
+  "next_trading_day": "2026-08-19",
+  "opening_classification": "PENDING",
   "two_day_relationship": "LOWER_VALUE",
-  "first_15m_candle": {
-    "open": 24223.85,
-    "high": 24269.65,
-    "low": 24211.1,
-    "close": 24245.1,
-    "volume": 0,
-    "type": "BULLISH",
-    "acceptance": "INSIDE_VALUE"
-  },
+  "first_15m_candle": null,
   "today_full": {},
   "predictions": {
     "day_type": {
@@ -61,11 +53,10 @@
       "bias": "BEARISH",
       "forecast": "RANGE",
       "signals": [
-        "narrow_cpr",
         "wide_va",
         "wide_cam"
       ],
-      "cpr_narrow": true,
+      "cpr_narrow": false,
       "cpr_wide": false,
       "va_narrow": false,
       "va_wide": true,
@@ -121,90 +112,90 @@
       "trigger_levels": {
         "reversal_longs": [
           {
-            "level": 24290.0,
+            "level": 24220.0,
             "desc": "POC rejection",
-            "target": 24324.26625
+            "target": 24186.456250000003
           },
           {
-            "level": 24251.033750000002,
+            "level": 24123.34375,
             "desc": "L3 reversal (bullish)",
-            "target": 24324.26625
+            "target": 24186.456250000003
           },
           {
-            "level": 24230.0,
+            "level": 24200.0,
             "desc": "VAL bounce",
-            "target": 24290.0
+            "target": 24220.0
           },
           {
-            "level": 24291.56666666667,
+            "level": 24193.150000000005,
             "desc": "CPR support in uptrend",
-            "target": 24324.26625
+            "target": 24186.456250000003
           }
         ],
         "reversal_shorts": [
           {
-            "level": 24290.0,
+            "level": 24220.0,
             "desc": "POC rejection",
-            "target": 24251.033750000002
+            "target": 24123.34375
           },
           {
-            "level": 24324.26625,
+            "level": 24186.456250000003,
             "desc": "H3 rejection (bearish)",
-            "target": 24251.033750000002
+            "target": 24123.34375
           },
           {
-            "level": 24326.0,
+            "level": 24264.0,
             "desc": "VAH rejection",
-            "target": 24290.0
+            "target": 24220.0
           },
           {
-            "level": 24291.56666666667,
+            "level": 24193.150000000005,
             "desc": "CPR resistance in downtrend",
-            "target": 24251.033750000002
+            "target": 24123.34375
           }
         ],
         "breakout_longs": [
           {
-            "level": 24356.183333333338,
+            "level": 24231.40000000001,
             "desc": "R1 break",
-            "target": 24424.716666666667
+            "target": 24307.900000000005
           },
           {
-            "level": 24360.8825,
+            "level": 24218.0125,
             "desc": "H4 breakout",
-            "target": 24421.13360389979
+            "target": 24269.65
           },
           {
-            "level": 24360.1,
+            "level": 24269.65,
             "desc": "PDH break",
-            "target": 24424.716666666667
+            "target": 24307.900000000005
           },
           {
-            "level": 24326.0,
+            "level": 24264.0,
             "desc": "VAH break (accepted)",
-            "target": 24356.183333333338
+            "target": 24231.40000000001
           }
         ],
         "breakdown_shorts": [
           {
-            "level": 24223.03333333334,
+            "level": 24116.65000000001,
             "desc": "S1 break",
-            "target": 24158.41666666667
+            "target": 24078.400000000005
           },
           {
-            "level": 24214.417500000003,
+            "level": 24091.787500000002,
             "desc": "L4 breakdown",
-            "target": 24154.166396100212
+            "target": 24040.15
           },
           {
-            "level": 24226.95,
+            "level": 24154.9,
             "desc": "PDL break",
-            "target": 24158.41666666667
+            "target": 24078.400000000005
           },
           {
-            "level": 24230.0,
+            "level": 24200.0,
             "desc": "VAL break (accepted)",
-            "target": 24223.03333333334
+            "target": 24116.65000000001
           }
         ]
       },
@@ -212,57 +203,57 @@
         "scenario": "Bearish structure (Lower Value / Narrow CPR)",
         "entry": "Sell rallies into CPR/POC/VAH resistance",
         "targets": [
-          24223.03333333334,
-          24158.41666666667,
-          24251.033750000002
+          24116.65000000001,
+          24078.400000000005,
+          24123.34375
         ],
         "stop": "Above PDH / VAH / CPR_TOP",
         "contingency": "If CPR breaks up or price closes above VAH \u2192 flip to LONG bias"
       },
       "hot_zones": [
         {
-          "top": 24223.03333333334,
-          "bottom": 24214.417500000003,
-          "width": 8.62,
+          "top": 24123.34375,
+          "bottom": 24116.65000000001,
+          "width": 6.69,
           "levels": [
-            24223.03333333334,
-            24214.417500000003
+            24116.65000000001,
+            24123.34375
           ]
         },
         {
-          "top": 24230.0,
-          "bottom": 24223.03333333334,
-          "width": 6.97,
+          "top": 24193.150000000005,
+          "bottom": 24186.456250000003,
+          "width": 6.69,
           "levels": [
-            24230.0,
-            24223.03333333334
+            24193.150000000005,
+            24186.456250000003
           ]
         },
         {
-          "top": 24291.56666666667,
-          "bottom": 24290.0,
-          "width": 1.57,
+          "top": 24200.0,
+          "bottom": 24193.150000000005,
+          "width": 6.85,
           "levels": [
-            24291.56666666667,
-            24290.0
+            24193.150000000005,
+            24200.0
           ]
         },
         {
-          "top": 24326.0,
-          "bottom": 24324.26625,
-          "width": 1.73,
+          "top": 24220.0,
+          "bottom": 24218.0125,
+          "width": 1.99,
           "levels": [
-            24326.0,
-            24324.26625
+            24220.0,
+            24218.0125
           ]
         },
         {
-          "top": 24360.8825,
-          "bottom": 24356.183333333338,
-          "width": 4.7,
+          "top": 24231.40000000001,
+          "bottom": 24220.0,
+          "width": 11.4,
           "levels": [
-            24356.183333333338,
-            24360.8825
+            24220.0,
+            24231.40000000001
           ]
         }
       ],
