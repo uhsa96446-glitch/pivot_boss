@@ -405,30 +405,21 @@ function Scenarios({ st, data, ltp }) {
   const isGapUp = openClass === "OUT_ABOVE" || openClass === "OUTSIDE_ABOVE";
   const isGapDown = openClass === "OUT_BELOW" || openClass === "OUTSIDE_BELOW";
   const candleData = ib || first15m;
-  const currentPrice = ltp || st.p?.close || candleData?.close || 0;
-
-  // Acceptance logic: either initial candle rejected OR price breaks breakdown/breakout levels
-  const is15mRejected = candleData?.acceptance === "REJECTED" || (candleData?.acceptance === "INSIDE_VALUE" && currentPrice >= (st.va?.VAL || 0));
+  const is15mRejected = candleData?.acceptance === "REJECTED" || candleData?.acceptance === "INSIDE_VALUE";
 
   // Determine CPR Pullback candidates
   const isHigherValue = st.twoDayRel === "HIGHER_VALUE" || st.twoDayRel === "OVERLAPPING_HIGHER";
   const isLowerValue = st.twoDayRel === "LOWER_VALUE" || st.twoDayRel === "OVERLAPPING_LOWER";
   const isPullbackToCPR = candleData && (candleData.low <= (st.pv?.CPR_TOP || 0) && candleData.high >= (st.pv?.CPR_BOTTOM || 0));
 
-  // Check if live LTP is currently breaking out below S1/PDL (Initiative Trend Breakdown)
-  const isBreakingDownBelowS1 = currentPrice > 0 && currentPrice < (st.pv?.S1 || 0);
-  const isBreakingOutAboveR1 = currentPrice > 0 && currentPrice > (st.pv?.R1 || Infinity);
-
+  // Initial opening classification matching (Playbook standard)
   let activeCaseKey = null;
   if (st.twoDayRel === "INSIDE") activeCaseKey = "case_g_inside_day";
-  else if (isGapDown && isBreakingDownBelowS1 && st.cprWidthForecast?.includes("NARROW")) activeCaseKey = "case_h_double_distribution";
-  else if (isGapDown && isBreakingDownBelowS1) activeCaseKey = "case_e_out_below";
   else if (isGapUp && is15mRejected) activeCaseKey = "case_d_gap_reversal";
   else if (isGapDown && is15mRejected) activeCaseKey = "case_e_gap_reversal";
   else if (isHigherValue && isPullbackToCPR) activeCaseKey = "case_f_cpr_bullish_pullback";
   else if (isLowerValue && isPullbackToCPR) activeCaseKey = "case_f2_cpr_bearish_pullback";
-  else if (st.cprWidthForecast?.includes("NARROW") && (isGapUp || isGapDown)) activeCaseKey = "case_h_double_distribution";
-  else if (isBreakingOutAboveR1 || isBreakingDownBelowS1) activeCaseKey = "case_i_pivot_breakout_ladder";
+  else if (st.cprWidthForecast?.includes("NARROW") && (isGapUp || isGapDown) && !is15mRejected) activeCaseKey = "case_h_double_distribution";
   else if (openClass === "IN_VALUE" || openClass === "IN_RANGE_IN_VALUE") activeCaseKey = "case_a_in_range_in_value";
   else if (openClass === "ABOVE_VALUE" || openClass === "IN_RANGE_ABOVE_VALUE") activeCaseKey = "case_b_in_range_above_value";
   else if (openClass === "BELOW_VALUE" || openClass === "IN_RANGE_BELOW_VALUE") activeCaseKey = "case_c_in_range_below_value";
