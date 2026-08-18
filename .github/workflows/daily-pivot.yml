@@ -3,7 +3,7 @@ name: Daily PivotBoss Update
 on:
   schedule:
     # Runs at 12:30 UTC = 6:00 PM IST (UTC+5:30)
-    - cron: '30 12 * * 1-5'
+    # - cron: '30 12 * * 1-5'
   workflow_dispatch:
 
 jobs:
