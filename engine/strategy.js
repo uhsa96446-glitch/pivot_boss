@@ -96,7 +96,7 @@ export function buildState(data) {
     const is15mAcceptedAbovePDH = has15mClosed && candleClose > pdh;
     const is15mAcceptedBelowPDL = has15mClosed && candleClose < pdl;
     const is15mRejected = has15mClosed
-        ? (isGapUp && candleClose < pdh) || (isGapDown && candleClose > pdl) || first15m.acceptance === "REJECTED" || first15m.acceptance === "INSIDE_VALUE"
+        ? (isGapUp && candleClose < pdh) || (isGapDown && candleClose > pdl) || first15m.acceptance === "REJECTED"
         : false;
 
     // 3. SYNTHESIZE REGIME — Exhaustive Macro × Micro Combination Matrix (§4, §5, §10, §11, §45)
@@ -111,7 +111,7 @@ export function buildState(data) {
     let regimeDesc = `Macro: ${macroBias} · Balanced Auction. Fade VAL/L3 & VAH/H3; avoid the middle.`;
 
     // ── PRIORITY 0: Extreme Displacement Override (Wild Move) ──────────────────
-    if (isOpenAboveH5 || isOpenBelowL5 || (hasGPZ && isNarrowCPR)) {
+    if (isOpenAboveH5 || isOpenBelowL5) {
         regime = "WILD MOVE (HIGH VOLATILITY)";
         regimeTone = "purple";
         regimeDesc = `Macro: ${macroBias} · Micro: Open beyond H5/L5 (extreme shock). Reduce size 50%; wait for IB before entering.`;
