@@ -850,6 +850,21 @@ def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info
     }
 
     # ── Key Trigger Levels (§14-17) ──
+    # Build sorted level pools for dynamic next-level lookup
+    all_upside = sorted(set([vah, poc, val, piv["P"], piv["R1"], piv["R2"], piv["R3"],
+                             piv["H1"], piv["H2"], piv["H3"], piv["H4"], piv["H5"]]))
+    all_downside = sorted(all_upside, reverse=True)
+
+    def next_above(level):
+        """Return the smallest level strictly greater than `level`."""
+        candidates = [x for x in all_upside if x > level]
+        return min(candidates) if candidates else level
+
+    def next_below(level):
+        """Return the largest level strictly less than `level`."""
+        candidates = [x for x in all_downside if x < level]
+        return min(candidates) if candidates else level
+
     scenarios["trigger_levels"] = {
         "reversal_longs": [
             {"level": poc, "desc": "POC rejection", "target": piv["H3"]},
@@ -865,15 +880,15 @@ def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info
         ],
         "breakout_longs": [
             {"level": piv["R1"], "desc": "R1 break", "target": piv["R2"]},
-            {"level": piv["H4"], "desc": "H4 breakout", "target": piv["H5"]},
-            {"level": pdh, "desc": "PDH break", "target": piv["R2"]},
-            {"level": vah, "desc": "VAH break (accepted)", "target": piv["R1"]},
+            {"level": piv["H4"], "desc": "H4 breakout", "target": next_above(piv["H4"])},
+            {"level": pdh, "desc": "PDH break", "target": next_above(pdh)},
+            {"level": vah, "desc": "VAH break (accepted)", "target": next_above(vah)},
         ],
         "breakdown_shorts": [
             {"level": piv["S1"], "desc": "S1 break", "target": piv["S2"]},
-            {"level": piv["L4"], "desc": "L4 breakdown", "target": piv["L5"]},
-            {"level": pdl, "desc": "PDL break", "target": piv["S2"]},
-            {"level": val, "desc": "VAL break (accepted)", "target": piv["S1"]},
+            {"level": piv["L4"], "desc": "L4 breakdown", "target": next_below(piv["L4"])},
+            {"level": pdl, "desc": "PDL break", "target": next_below(pdl)},
+            {"level": val, "desc": "VAL break (accepted)", "target": next_below(val)},
         ],
     }
 
@@ -919,10 +934,11 @@ def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info
         }
     else:
         # Range or neutral
+        raw_targets = [poc, piv["R1"], piv["S1"]]
         scenarios["primary_plan"] = {
             "scenario": "Range-bound / Inside CPR",
             "entry": "Fade extremes: buy near VAL/PDL/S1, sell near VAH/PDH/R1",
-            "targets": [poc, piv["R1"], piv["S1"]],
+            "targets": sorted(raw_targets),  # ascending for range fading
             "stop": "Beyond PDH/PDL",
             "contingency": "If breakout confirmed (first 15m) → follow breakout",
         }
