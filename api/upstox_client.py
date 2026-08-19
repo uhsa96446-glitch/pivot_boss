@@ -34,9 +34,13 @@ logger = logging.getLogger(__name__)
 
 # Default config path relative to this file
 DEFAULT_CONFIG_PATH = Path(__file__).parent / "upstox.json"
+GITHUB_CONFIG_PATH = Path(__file__).parent / "github.json"
+
+with open(GITHUB_CONFIG_PATH, "r", encoding="utf-8") as f:
+    github_config = json.load(f)
 
 # GitHub configuration (cross-machine token sync)
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = github_config["token"]
 USERNAME = "mister-test"
 REPO = "api_url"
 FILE_PATH = "ups_tok.txt"

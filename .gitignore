@@ -45,3 +45,4 @@ package-lock.json
 
 # Tests
 tests/
+api/github.json
