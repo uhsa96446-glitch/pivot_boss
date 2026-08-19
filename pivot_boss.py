@@ -878,36 +878,42 @@ def compute_scenario_coverage(prev_bar: dict, piv: dict, va: dict, day_type_info
     }
 
     # ── Primary + Contingency Plans ──
+    # Targets are dynamically sorted by price level so they always flow in the
+    # correct direction regardless of relative Camarilla/Floor pivot positions.
     relationship = day_type_info.get("bias", "NEUTRAL")
     if relationship == "BULLISH":
+        raw_targets = [piv["R1"], piv["R2"], piv["H3"]]
         scenarios["primary_plan"] = {
             "scenario": "Bullish structure (Higher Value / Narrow CPR)",
             "entry": "Buy pullbacks into CPR/POC/VAL support",
-            "targets": [piv["R1"], piv["R2"], piv["H3"]],
+            "targets": sorted(raw_targets),  # ascending
             "stop": "Below PDL / VAL / CPR_BOTTOM",
             "contingency": "If CPR breaks down or price closes below VAL → flip to SHORT bias",
         }
     elif relationship == "BEARISH":
+        raw_targets = [piv["S1"], piv["S2"], piv["L3"]]
         scenarios["primary_plan"] = {
             "scenario": "Bearish structure (Lower Value / Narrow CPR)",
             "entry": "Sell rallies into CPR/POC/VAH resistance",
-            "targets": [piv["S1"], piv["S2"], piv["L3"]],
+            "targets": sorted(raw_targets, reverse=True),  # descending
             "stop": "Above PDH / VAH / CPR_TOP",
             "contingency": "If CPR breaks up or price closes above VAH → flip to LONG bias",
         }
     elif relationship == "MODERATELY_BULLISH":
+        raw_targets = [piv["R1"], piv["H3"]]
         scenarios["primary_plan"] = {
             "scenario": "Overlapping Higher CPR",
             "entry": "Wait for support rejection into CPR → LONG",
-            "targets": [piv["R1"], piv["H3"]],
+            "targets": sorted(raw_targets),  # ascending
             "stop": "Below CPR_BOTTOM",
             "contingency": "If price rejects CPR to downside → wait for VAL bounce",
         }
     elif relationship == "MODERATELY_BEARISH":
+        raw_targets = [piv["S1"], piv["L3"]]
         scenarios["primary_plan"] = {
             "scenario": "Overlapping Lower CPR",
             "entry": "Wait for resistance rejection off CPR → SHORT",
-            "targets": [piv["S1"], piv["L3"]],
+            "targets": sorted(raw_targets, reverse=True),  # descending
             "stop": "Above CPR_TOP",
             "contingency": "If price pushes through CPR → wait for VAH rejection",
         }
