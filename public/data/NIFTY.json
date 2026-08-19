@@ -273,5 +273,16 @@
         "Wait if reversal level touched but no reversal confirmation"
       ]
     }
+  },
+  "initial_balance": {
+    "open": 24152.05,
+    "high": 24172.85,
+    "low": 24065.1,
+    "close": 24091.8,
+    "volume": 0,
+    "type": "BEARISH",
+    "acceptance": "ACCEPTED_OUTSIDE",
+    "range": 107.75,
+    "width_type": "NARROW_IB"
   }
 }
