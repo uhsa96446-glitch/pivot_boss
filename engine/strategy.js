@@ -58,14 +58,17 @@ export function buildState(data) {
     else if (pv.L5 && openPrice < pv.L5) camOpenClass = "BELOW_L5";
     else if (pv.L4 && openPrice < pv.L4) camOpenClass = "BELOW_L4";
 
-    // CPR Width Forecast (Section 4 of Playbook)
-    const cprWidth = pv.CPR_WIDTH || (cprTop - cprBottom);
+    // Width signals — computed by Python compute_day_type() per Playbook §4 §170
+    // (Do not re-derive with fixed thresholds in JS; Playbook says "extremely" is qualitative)
+    const isNarrowCPR = Boolean(day.cpr_narrow);
+    const isWideCPR = Boolean(day.cpr_wide);
+    const isNarrowVA = Boolean(day.va_narrow);
+    const isWideVA = Boolean(day.va_wide);
+    const isNarrowCam = Boolean(day.cam_narrow);
+    const isWideCam = Boolean(day.cam_wide);
     let cprWidthForecast = "NORMAL";
-    if (cprWidth > 0) {
-        const relWidthPct = (cprWidth / (close || 1)) * 100;
-        if (relWidthPct < 0.25) cprWidthForecast = "NARROW (TREND)";
-        else if (relWidthPct > 0.6) cprWidthForecast = "WIDE (RANGE)";
-    }
+    if (isNarrowCPR) cprWidthForecast = "NARROW (TREND)";
+    else if (isWideCPR) cprWidthForecast = "WIDE (RANGE)";
 
     // PivotBoss Dual-Bias Regime Engine (Macro 2-Day CPR + Micro Opening Action) §4, §5, §10, §11, §45
     const isOpenAboveH5 = pv.H5 && openPrice > pv.H5;
@@ -79,8 +82,6 @@ export function buildState(data) {
     const isHigherVal = twoDay === "HIGHER_VALUE" || twoDay === "OVERLAPPING_HIGHER";
     const isLowerVal = twoDay === "LOWER_VALUE" || twoDay === "OVERLAPPING_LOWER";
     const isInsideCPR = twoDay === "INSIDE";
-    const isNarrowCPR = cprWidthForecast.includes("NARROW");
-    const isWideCPR = cprWidthForecast.includes("WIDE");
 
     let macroBias = "NEUTRAL";
     if (isHigherVal) macroBias = "BULLISH";
